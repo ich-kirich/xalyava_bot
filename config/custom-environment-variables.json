@@ -1,0 +1,8 @@
+{
+  "server": {
+    "port": "PORT"
+  },
+  "telegram": {
+    "apiKey": "TELEGRAM_KEY"
+  }
+}
