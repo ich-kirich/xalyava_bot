@@ -16,10 +16,10 @@ class BotControllers {
               disable_web_page_preview: true,
             });
             break;
-          case "/startXalyava":
+          case "/startxalyava":
             bot.sendMessage(chatId, MESSAGES.START_MAILING);
             break;
-          case "/stopXalyava":
+          case "/stopxalyava":
             bot.sendMessage(chatId, MESSAGES.STOP_MAILING);
             break;
           default:

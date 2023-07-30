@@ -1,5 +1,12 @@
 {
   "server": {
     "port": 5000
+  },
+  "db": {
+    "database": "XalyavaBot",
+    "username": "postgres",
+    "host": "kubernetes.docker.internal",
+    "port": "5432",
+    "dialect": "postgres"
   }
 }

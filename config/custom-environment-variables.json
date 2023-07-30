@@ -2,6 +2,14 @@
   "server": {
     "port": "PORT"
   },
+  "db": {
+    "database": "DATABASE",
+    "username": "USER",
+    "host": "HOST",
+    "port": "PORT",
+    "dialect": "DIALECT",
+    "password": "PASSWORD"
+  },
   "telegram": {
     "apiKey": "TELEGRAM_KEY"
   }
