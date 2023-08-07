@@ -1,16 +1,13 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import * as iconv from "iconv-lite";
+import IStory from "../types/types";
 
-function isLinkLike(text) {
-  return (
-    text.trim().startsWith("http://") || text.trim().startsWith("https://")
-  );
-}
-
-function extractImagesAndTextFromStory(html) {
+function extractImagesAndTextFromStory(html: cheerio.Element) {
   const $ = cheerio.load(html);
-  const targetDiv = $(".story__content-inner_slice-by-block");
+  const NameStoryDiv = $(".story__title-link");
+  const NameStory = `[${NameStoryDiv.text()}](${NameStoryDiv.attr("href")})`;
+  const targetDiv = $(".story__content-inner");
 
   const imagesArray = targetDiv
     .find(".story-block_type_image img")
@@ -28,26 +25,23 @@ function extractImagesAndTextFromStory(html) {
       if (text) {
         return text;
       } else {
-        const hasLinkWithText = $(el).find("a").text().trim();
-        if (!hasLinkWithText) {
-          return $(el).text().trim();
-        } else {
-          if (isLinkLike(hasLinkWithText)) {
-            const textWithoutLinks = $(el)
-              .clone()
-              .find("a")
-              .remove()
-              .end()
-              .text()
-              .trim();
-            return textWithoutLinks;
-          }
+        const linkElem = $(el).find("a");
+        if (linkElem.length > 0) {
+          const linkHref = linkElem.attr("href");
+          const linkText = linkElem.text();
+          const attachLink = `[${linkText}](${linkHref})`;
+          return attachLink;
         }
+        return $(el).text().trim();
       }
     })
     .get();
 
-  return { imagesArray, textArray };
+  return { imagesArray, textArray, NameStory };
+}
+
+function generateMessagePost(post: IStory) {
+  
 }
 
 async function getDivFromWebsite(url: string) {
@@ -62,11 +56,10 @@ async function getDivFromWebsite(url: string) {
     const $ = cheerio.load(ruHtml);
     const storiesDivs = $(".story").toArray().slice(0, 5);
     const storiesArray = storiesDivs.map((el) => {
-      const { imagesArray, textArray } = extractImagesAndTextFromStory(el);
-      console.log("Images:", imagesArray);
-      console.log("Text:", textArray);
-      return 0;
+      const { imagesArray, textArray, NameStory } = extractImagesAndTextFromStory(el);
+      return { imagesArray, textArray, NameStory };
     });
+    console.log(storiesArray);
     return 0;
   } catch (error) {
     console.error("Error fetching data:", error.message);
