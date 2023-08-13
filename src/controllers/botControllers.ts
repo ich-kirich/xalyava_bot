@@ -1,9 +1,9 @@
 import ApiError from "../error/apiError";
 import { StatusCodes } from "http-status-codes";
-import TelegramBot from "node-telegram-bot-api";
-import { MESSAGES } from "../libs/constants";
+import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
+import { linkSite, MESSAGES } from "../libs/constants";
 import { addNewUser, startMailing, stopMailing } from "../services/botServices";
-import getDivFromWebsite from "../libs/parsingSite";
+import getPostFromWebsite from "../libs/parsingSite";
 
 class BotControllers {
   messagesToBot(bot: TelegramBot) {
@@ -23,7 +23,20 @@ class BotControllers {
           case "/startxalyava":
             bot.sendMessage(chatId, MESSAGES.START_MAILING);
             await startMailing(userId);
-            await getDivFromWebsite("https://pikabu.ru/community/steam/new");
+            const { postText, imagesArray } = await getPostFromWebsite(
+              linkSite,
+            );
+            const media: InputMediaPhoto[] = imagesArray.map(
+              (imageUrl) => ({
+                type: "photo",
+                media: imageUrl,
+              }),
+            );
+            await bot.sendMediaGroup(chatId, media);
+            await bot.sendMessage(chatId, postText, {
+              disable_web_page_preview: true,
+              parse_mode: "Markdown",
+            });
             break;
           case "/stopxalyava":
             bot.sendMessage(chatId, MESSAGES.STOP_MAILING);

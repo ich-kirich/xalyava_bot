@@ -1,50 +1,63 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { StatusCodes } from "http-status-codes";
 import * as iconv from "iconv-lite";
-import IStory from "../types/types";
+import ApiError from "../error/apiError";
+import htmlToMd from "html-to-md";
+import { addSpacesToMarkdownLink, removeSpecialCharacters } from "./utils";
 
-function extractImagesAndTextFromStory(html: cheerio.Element) {
+function getPost(html: string) {
   const $ = cheerio.load(html);
-  const NameStoryDiv = $(".story__title-link");
-  const NameStory = `[${NameStoryDiv.text()}](${NameStoryDiv.attr("href")})`;
-  const targetDiv = $(".story__content-inner");
-
-  const imagesArray = targetDiv
-    .find(".story-block_type_image img")
-    .map((_, el) => $(el).attr("data-large-image") || $(el).attr("src"))
-    .get();
-
-  const textArray = targetDiv
-    .find(".story-block_type_text")
-    .map((_, el) => {
-      const text = $(el)
-        .contents()
-        .filter((_, child) => child.type === "text")
-        .text()
-        .trim();
-      if (text) {
-        return text;
-      } else {
-        const linkElem = $(el).find("a");
-        if (linkElem.length > 0) {
-          const linkHref = linkElem.attr("href");
-          const linkText = linkElem.text();
-          const attachLink = `[${linkText}](${linkHref})`;
-          return attachLink;
-        }
-        return $(el).text().trim();
-      }
-    })
-    .get();
-
-  return { imagesArray, textArray, NameStory };
+  const storiesDivs = $(".story__main").toArray().slice(0, 5);
+  const postBlock = $(storiesDivs[0]).html();
+  const postContent = cheerio.load(postBlock)(".story__content-inner").html();
+  return { postBlock, postContent };
 }
 
-function generateMessagePost(post: IStory) {
-  
+function extractImages(html: string): string[] {
+  const $ = cheerio.load(html);
+  const imageSrcArray: string[] = [];
+
+  $(".story-image__image").each((index, element) => {
+    const imageSrc = $(element).attr("data-src");
+    if (imageSrc) {
+      imageSrcArray.push(imageSrc);
+    }
+  });
+
+  return imageSrcArray;
 }
 
-async function getDivFromWebsite(url: string) {
+function deleteImages(html: string) {
+  const $ = cheerio.load(html);
+  $(".story-image__image").remove();
+  const updatedHtml = $.html();
+
+  return updatedHtml;
+}
+
+function addNamePost(mardownText: string, html: string): string {
+  const $ = cheerio.load(html);
+  const link = $(".story__title-link");
+
+  const title = removeSpecialCharacters(link.text());
+  const href = link.attr("href");
+
+  const namePost = `[${title}](${href})`;
+
+  return namePost + "\n\n" + mardownText;
+}
+
+function fixMardown(text: string): string {
+  const regex = /\*\*(.*?)\*\*/g;
+  const removeBold = text.replace(regex, "$1");
+  const escapeMardownList = removeBold.replace(/\*/g, "\\*");
+  const removeSlash = escapeMardownList.replace(/\\\]/g, ']');
+  const addSpaceLink = addSpacesToMarkdownLink(removeSlash);
+  return addSpaceLink;
+}
+
+async function getPostFromWebsite(url: string) {
   try {
     const response = await axios.get(url, {
       headers: {
@@ -53,18 +66,18 @@ async function getDivFromWebsite(url: string) {
       responseType: "arraybuffer",
     });
     const ruHtml = iconv.decode(response.data, "win1251");
-    const $ = cheerio.load(ruHtml);
-    const storiesDivs = $(".story").toArray().slice(0, 5);
-    const storiesArray = storiesDivs.map((el) => {
-      const { imagesArray, textArray, NameStory } = extractImagesAndTextFromStory(el);
-      return { imagesArray, textArray, NameStory };
-    });
-    console.log(storiesArray);
-    return 0;
-  } catch (error) {
-    console.error("Error fetching data:", error.message);
-    return null;
+    const { postBlock, postContent } = getPost(ruHtml);
+    const imagesArray = extractImages(postContent);
+    const htmlWithOutImages = deleteImages(postContent);
+    const markdownText = htmlToMd(htmlWithOutImages);
+    const rightMarkdown = fixMardown(markdownText);
+    const postText = addNamePost(rightMarkdown, postBlock);
+    return { postText, imagesArray };
+  } catch (e) {
+    console.log(
+      new ApiError(e.status || StatusCodes.INTERNAL_SERVER_ERROR, e.message),
+    );
   }
 }
 
-export default getDivFromWebsite;
+export default getPostFromWebsite;
