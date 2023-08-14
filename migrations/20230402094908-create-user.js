@@ -13,7 +13,7 @@ module.exports = {
         allowNull: false,
         unique: true,
       },
-      isMailing: {
+      isSubscribe: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
       },

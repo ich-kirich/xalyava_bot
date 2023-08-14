@@ -1,12 +1,12 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { StatusCodes } from "http-status-codes";
 import * as iconv from "iconv-lite";
-import ApiError from "../error/apiError";
 import htmlToMd from "html-to-md";
 import { addSpacesToMarkdownLink, removeSpecialCharacters } from "./utils";
 import { addPosts } from "../services/botServices";
 import { IPost, IPostInf } from "../types/types";
+import logger from "./logger";
+import ApiError from "../error/apiError";
 
 async function getPosts(html: string): Promise<IPostInf[]> {
   const $ = cheerio.load(html);
@@ -28,7 +28,7 @@ async function getPosts(html: string): Promise<IPostInf[]> {
       resultPosts.push({ postId, postBlock, postContent });
     }
   }
-
+  logger.info("Received an array of posts for distribution", resultPosts);
   return resultPosts;
 }
 
@@ -42,7 +42,7 @@ function extractImages(html: string): string[] {
       imageSrcArray.push(imageSrc);
     }
   });
-
+  logger.info("Array of images for the post was obtained", imageSrcArray);
   return imageSrcArray;
 }
 
@@ -50,19 +50,19 @@ function deleteImages(html: string): string {
   const $ = cheerio.load(html);
   $(".story-image__image").remove();
   const updatedHtml = $.html();
-
   return updatedHtml;
 }
 
 function addNamePost(mardownText: string, html: string): string {
   const $ = cheerio.load(html);
   const link = $(".story__title-link");
-
   const title = removeSpecialCharacters(link.text());
   const href = link.attr("href");
-
   const namePost = `[${title}](${href})`;
-
+  logger.info(
+    "Title and text of the post have been merged",
+    namePost + "\n\n" + mardownText,
+  );
   return namePost + "\n\n" + mardownText;
 }
 
@@ -72,6 +72,7 @@ function fixMardown(text: string): string {
   const escapeMardownList = removeBold.replace(/\*/g, "\\*");
   const removeSlash = escapeMardownList.replace(/\\\]/g, "]");
   const addSpaceLink = addSpacesToMarkdownLink(removeSlash);
+  logger.info("Mardown the post markup has been corrected", addSpaceLink);
   return addSpaceLink;
 }
 
@@ -95,10 +96,15 @@ async function getPostsFromWebsite(url: string): Promise<IPost[]> {
       const postText = addNamePost(rightMarkdown, post.postBlock);
       resultPosts.push({ postId, postText, imagesArray });
     }
+    logger.info(
+      "Final array of posts for distribution was obtained",
+      resultPosts,
+    );
     return resultPosts;
   } catch (e) {
-    console.log(
-      new ApiError(e.status || StatusCodes.INTERNAL_SERVER_ERROR, e.message),
+    logger.error(
+      "Error when generating the final array with posts for distribution",
+      new ApiError(e.status, e.message),
     );
   }
 }

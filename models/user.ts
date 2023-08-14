@@ -6,7 +6,7 @@ class User extends Model {
 
   public userId: number;
 
-  public isMailing!: boolean;
+  public isSubscribe!: boolean;
 }
 
 User.init(
@@ -21,7 +21,7 @@ User.init(
       allowNull: false,
       unique: true,
     },
-    isMailing: {
+    isSubscribe: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       allowNull: false,

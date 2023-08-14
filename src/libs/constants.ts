@@ -6,4 +6,4 @@ export enum MESSAGES {
   NO_NEW_POSTS = "Сегодня не было обнаружено новой халявы, но все ещё впереди😎"
 }
 
-export const linkSite = "https://pikabu.ru/community/steam/new";
+export const linkSite = "https://pikabu.ru/community/steam";

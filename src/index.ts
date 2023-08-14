@@ -1,11 +1,11 @@
 import TelegramBot from "node-telegram-bot-api";
 import config from "config";
 import BotControllers from "./controllers/botControllers";
-import { StatusCodes } from "http-status-codes";
-import ApiError from "./error/apiError";
 import initDb from "../models/initDb";
+import logger from "./libs/logger";
+import ApiError from "./error/apiError";
 
-const startServer = async () => {
+const startBot = async () => {
   try {
     await initDb();
     const bot = new TelegramBot(config.get("telegram.apiKey"), {
@@ -13,12 +13,10 @@ const startServer = async () => {
     });
     BotControllers.messagesToBot(bot);
     BotControllers.sendPosts(bot);
-    console.log("The bot is up and running");
+    logger.info("The bot is up and running");
   } catch (e) {
-    console.log(
-      new ApiError(e.status || StatusCodes.INTERNAL_SERVER_ERROR, e.message),
-    );
+    logger.error("Bot startup error", new ApiError(e.status, e.message));
   }
 };
 
-startServer();
+startBot();

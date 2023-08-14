@@ -1,8 +1,9 @@
+import logger from "../src/libs/logger";
 import sequelize from "../src/db";
 
 const initDb = async (): Promise<void> => {
   await sequelize.authenticate();
-  console.log("Connection to the database has been made");
+  logger.info("Database connection established successfully");
   return;
 };
 
