@@ -5,18 +5,20 @@ import ApiError from "../error/apiError";
 
 export async function addNewUser(userId: number): Promise<void> {
   const user = await User.findOne({ where: { userId } });
-  if (!user) {
-    try {
-      const newUser = await User.create({
-        userId,
-      });
-      logger.info(`New user with this id: ${userId} has been added`);
-    } catch (e) {
-      logger.error(
-        `Error when adding a user to the database with this id: ${userId}`,
-        new ApiError(e.status, e.message),
-      );
-    }
+  if (user) {
+    return;
+  }
+  try {
+    await User.create({
+      userId,
+    });
+    logger.info(`New user with this id: ${userId} has been added`);
+  } catch (e) {
+    logger.error(
+      `Error when adding a user to the database with this id: ${userId}`,
+      new ApiError(e.status, e.message),
+    );
+    throw new ApiError(e.status, e.message);
   }
 }
 
@@ -50,6 +52,7 @@ export async function addPosts(postsIds: number[]): Promise<number[]> {
           `Error when adding a post to the database with this id: ${postId}`,
           new ApiError(e.status, e.message),
         );
+        throw new ApiError(e.status, e.message);
       }
     }
   }
@@ -68,5 +71,6 @@ export async function getUsersForMailing(): Promise<number[]> {
       "Error when generating an array of users for sending posts",
       new ApiError(e.status, e.message),
     );
+    throw new ApiError(e.status, e.message);
   }
 }

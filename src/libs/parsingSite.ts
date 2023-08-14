@@ -35,22 +35,19 @@ async function getPosts(html: string): Promise<IPostInf[]> {
 function extractImages(html: string): string[] {
   const $ = cheerio.load(html);
   const imageSrcArray: string[] = [];
-
-  $(".story-image__image").each((index, element) => {
+  $(".story-image__image[data-src]").each((index, element) => {
     const imageSrc = $(element).attr("data-src");
-    if (imageSrc) {
-      imageSrcArray.push(imageSrc);
-    }
+    imageSrcArray.push(imageSrc);
   });
   logger.info("Array of images for the post was obtained", imageSrcArray);
   return imageSrcArray;
 }
 
+
 function deleteImages(html: string): string {
   const $ = cheerio.load(html);
   $(".story-image__image").remove();
-  const updatedHtml = $.html();
-  return updatedHtml;
+  return $.html();
 }
 
 function addNamePost(mardownText: string, html: string): string {
@@ -59,16 +56,13 @@ function addNamePost(mardownText: string, html: string): string {
   const title = removeSpecialCharacters(link.text());
   const href = link.attr("href");
   const namePost = `[${title}](${href})`;
-  logger.info(
-    "Title and text of the post have been merged",
-    namePost + "\n\n" + mardownText,
-  );
-  return namePost + "\n\n" + mardownText;
+  const finalText = `${namePost}\n\n${mardownText}`;
+  logger.info("Title and text of the post have been merged", finalText);
+  return finalText;
 }
 
 function fixMardown(text: string): string {
-  const regex = /\*\*(.*?)\*\*/g;
-  const removeBold = text.replace(regex, "$1");
+  const removeBold = text.replace(/\*\*(.*?)\*\*/g, "$1");
   const escapeMardownList = removeBold.replace(/\*/g, "\\*");
   const removeSlash = escapeMardownList.replace(/\\\]/g, "]");
   const addSpaceLink = addSpacesToMarkdownLink(removeSlash);
@@ -88,12 +82,12 @@ async function getPostsFromWebsite(url: string): Promise<IPost[]> {
     const posts = await getPosts(ruHtml);
     const resultPosts: IPost[] = [];
     for (const post of posts) {
-      const postId = post.postId;
-      const imagesArray = extractImages(post.postContent);
-      const htmlWithOutImages = deleteImages(post.postContent);
+      const { postId, postContent, postBlock } = post;
+      const imagesArray = extractImages(postContent);
+      const htmlWithOutImages = deleteImages(postContent);
       const markdownText = htmlToMd(htmlWithOutImages);
       const rightMarkdown = fixMardown(markdownText);
-      const postText = addNamePost(rightMarkdown, post.postBlock);
+      const postText = addNamePost(rightMarkdown, postBlock);
       resultPosts.push({ postId, postText, imagesArray });
     }
     logger.info(
@@ -106,6 +100,7 @@ async function getPostsFromWebsite(url: string): Promise<IPost[]> {
       "Error when generating the final array with posts for distribution",
       new ApiError(e.status, e.message),
     );
+    throw new ApiError(e.status, e.message);
   }
 }
 
