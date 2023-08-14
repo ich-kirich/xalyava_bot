@@ -8,7 +8,7 @@ import {
   startMailing,
   stopMailing,
 } from "../services/botServices";
-import getPostFromWebsite from "../libs/parsingSite";
+import getPostsFromWebsite from "../libs/parsingSite";
 import config from "config";
 import cron from "node-cron";
 
@@ -50,22 +50,26 @@ class BotControllers {
   sendPosts(bot: TelegramBot) {
     const timeCrone: string = config.get("sendPost.timeCrone");
     const job = cron.schedule(timeCrone, async () => {
-      const postContent = await getPostFromWebsite(linkSite);
+      const postsContent = await getPostsFromWebsite(linkSite);
       const chatsIds = await getUsersForMailing();
-      if (postContent !== null) {
-        const media: InputMediaPhoto[] = postContent.imagesArray.map((imageUrl) => ({
-          type: "photo",
-          media: imageUrl,
-        }));
-        for (const chatId of chatsIds) {
-          try {
-            await bot.sendMediaGroup(chatId, media);
-            await bot.sendMessage(chatId, postContent.postText, {
-              disable_web_page_preview: true,
-              parse_mode: "Markdown",
-            });
-          } catch (e) {
-            console.error(e.message);
+      if (postsContent !== null) {
+        for (const postContent of postsContent) {
+          const media: InputMediaPhoto[] = postContent.imagesArray.map(
+            (imageUrl) => ({
+              type: "photo",
+              media: imageUrl,
+            }),
+          );
+          for (const chatId of chatsIds) {
+            try {
+              await bot.sendMediaGroup(chatId, media);
+              await bot.sendMessage(chatId, postContent.postText, {
+                disable_web_page_preview: true,
+                parse_mode: "Markdown",
+              });
+            } catch (e) {
+              console.error(e.message);
+            }
           }
         }
       } else {

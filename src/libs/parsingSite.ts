@@ -7,17 +7,29 @@ import htmlToMd from "html-to-md";
 import { addSpacesToMarkdownLink, removeSpecialCharacters } from "./utils";
 import { addPosts } from "../services/botServices";
 
-async function getPost(html: string) {
+async function getPosts(html: string) {
   const $ = cheerio.load(html);
   const storiesDivs = $(".story").toArray().slice(0, 5);
   const postsIds = storiesDivs.map((storyDiv) =>
     parseInt($(storyDiv).attr("data-story-id")),
   );
-  const isAdd = await addPosts(postsIds);
-  if (isAdd !== null) {
-    const postBlock = $(storiesDivs[0]).html();
-    const postContent = cheerio.load(postBlock)(".story__content-inner").html();
-    return { postBlock, postContent };
+  const newIdsPosts = await addPosts(postsIds);
+  if (newIdsPosts !== null) {
+    const resultPosts = [];
+
+    for (const storyDiv of storiesDivs) {
+      const postId = parseInt($(storyDiv).attr("data-story-id"));
+
+      if (newIdsPosts.includes(postId)) {
+        const postBlock = $(storyDiv).html();
+        const postContent = cheerio
+          .load(postBlock)(".story__content-inner")
+          .html();
+        resultPosts.push({ postId, postBlock, postContent });
+      }
+    }
+
+    return resultPosts;
   }
   return null;
 }
@@ -65,7 +77,7 @@ function fixMardown(text: string): string {
   return addSpaceLink;
 }
 
-async function getPostFromWebsite(url: string) {
+async function getPostsFromWebsite(url: string) {
   try {
     const response = await axios.get(url, {
       headers: {
@@ -74,14 +86,19 @@ async function getPostFromWebsite(url: string) {
       responseType: "arraybuffer",
     });
     const ruHtml = iconv.decode(response.data, "win1251");
-    const post = await getPost(ruHtml);
-    if(post !== null){
-      const imagesArray = extractImages(post.postContent);
-      const htmlWithOutImages = deleteImages(post.postContent);
-      const markdownText = htmlToMd(htmlWithOutImages);
-      const rightMarkdown = fixMardown(markdownText);
-      const postText = addNamePost(rightMarkdown, post.postBlock);
-      return { postText, imagesArray };
+    const posts = await getPosts(ruHtml);
+    if (posts !== null) {
+      const resultPosts = [];
+      for(const post of posts) {
+        const postId = post.postId;
+        const imagesArray = extractImages(post.postContent);
+        const htmlWithOutImages = deleteImages(post.postContent);
+        const markdownText = htmlToMd(htmlWithOutImages);
+        const rightMarkdown = fixMardown(markdownText);
+        const postText = addNamePost(rightMarkdown, post.postBlock);
+        resultPosts.push({ postId, postText, imagesArray });
+      }
+      return resultPosts;
     }
     return null;
   } catch (e) {
@@ -91,4 +108,4 @@ async function getPostFromWebsite(url: string) {
   }
 }
 
-export default getPostFromWebsite;
+export default getPostsFromWebsite;

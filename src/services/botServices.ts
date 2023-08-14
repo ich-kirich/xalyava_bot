@@ -18,8 +18,8 @@ export async function stopMailing(userId: number) {
   await User.update({ isMailing: false }, { where: { userId } });
 }
 
-export async function addPosts(postsIds: number[]) {
-  let added = false;
+export async function addPosts(postsIds: number[]): Promise<number[] | null> {
+  const notAddedPosts: number[] = [];
 
   for (const postId of postsIds) {
     const existingPost = await Post.findOne({ where: { postId } });
@@ -28,16 +28,18 @@ export async function addPosts(postsIds: number[]) {
       try {
         await Post.create({ postId });
         console.log(`Added post with postId: ${postId}`);
-        added = true;
+        notAddedPosts.push(postId);
       } catch (e) {
         console.error(e.message);
       }
     }
   }
-  if (!added) {
+
+  if (notAddedPosts.length === 0) {
     return null;
   }
-  return 0;
+
+  return notAddedPosts;
 }
 
 export async function getUsersForMailing(): Promise<number[]> {
