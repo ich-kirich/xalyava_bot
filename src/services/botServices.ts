@@ -1,7 +1,7 @@
 import Post from "../../models/post";
 import User from "../../models/user";
 
-export async function addNewUser(userId: number) {
+export async function addNewUser(userId: number): Promise<void> {
   const user = await User.findOne({ where: { userId } });
   if (!user) {
     const newUser = await User.create({
@@ -10,15 +10,15 @@ export async function addNewUser(userId: number) {
   }
 }
 
-export async function startMailing(userId: number) {
+export async function startMailing(userId: number): Promise<void> {
   await User.update({ isMailing: true }, { where: { userId } });
 }
 
-export async function stopMailing(userId: number) {
+export async function stopMailing(userId: number): Promise<void> {
   await User.update({ isMailing: false }, { where: { userId } });
 }
 
-export async function addPosts(postsIds: number[]): Promise<number[] | null> {
+export async function addPosts(postsIds: number[]): Promise<number[]> {
   const notAddedPosts: number[] = [];
 
   for (const postId of postsIds) {
@@ -33,10 +33,6 @@ export async function addPosts(postsIds: number[]): Promise<number[] | null> {
         console.error(e.message);
       }
     }
-  }
-
-  if (notAddedPosts.length === 0) {
-    return null;
   }
 
   return notAddedPosts;

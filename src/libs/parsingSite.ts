@@ -6,32 +6,30 @@ import ApiError from "../error/apiError";
 import htmlToMd from "html-to-md";
 import { addSpacesToMarkdownLink, removeSpecialCharacters } from "./utils";
 import { addPosts } from "../services/botServices";
+import { IPost, IPostInf } from "../types/types";
 
-async function getPosts(html: string) {
+async function getPosts(html: string): Promise<IPostInf[]> {
   const $ = cheerio.load(html);
   const storiesDivs = $(".story").toArray().slice(0, 5);
   const postsIds = storiesDivs.map((storyDiv) =>
     parseInt($(storyDiv).attr("data-story-id")),
   );
-  const newIdsPosts = await addPosts(postsIds);
-  if (newIdsPosts !== null) {
-    const resultPosts = [];
+  const newIdsPosts: number[] = await addPosts(postsIds);
+  const resultPosts: IPostInf[] = [];
 
-    for (const storyDiv of storiesDivs) {
-      const postId = parseInt($(storyDiv).attr("data-story-id"));
+  for (const storyDiv of storiesDivs) {
+    const postId = parseInt($(storyDiv).attr("data-story-id"));
 
-      if (newIdsPosts.includes(postId)) {
-        const postBlock = $(storyDiv).html();
-        const postContent = cheerio
-          .load(postBlock)(".story__content-inner")
-          .html();
-        resultPosts.push({ postId, postBlock, postContent });
-      }
+    if (newIdsPosts.includes(postId)) {
+      const postBlock = $(storyDiv).html();
+      const postContent = cheerio
+        .load(postBlock)(".story__content-inner")
+        .html();
+      resultPosts.push({ postId, postBlock, postContent });
     }
-
-    return resultPosts;
   }
-  return null;
+
+  return resultPosts;
 }
 
 function extractImages(html: string): string[] {
@@ -48,7 +46,7 @@ function extractImages(html: string): string[] {
   return imageSrcArray;
 }
 
-function deleteImages(html: string) {
+function deleteImages(html: string): string {
   const $ = cheerio.load(html);
   $(".story-image__image").remove();
   const updatedHtml = $.html();
@@ -77,7 +75,7 @@ function fixMardown(text: string): string {
   return addSpaceLink;
 }
 
-async function getPostsFromWebsite(url: string) {
+async function getPostsFromWebsite(url: string): Promise<IPost[]> {
   try {
     const response = await axios.get(url, {
       headers: {
@@ -87,20 +85,17 @@ async function getPostsFromWebsite(url: string) {
     });
     const ruHtml = iconv.decode(response.data, "win1251");
     const posts = await getPosts(ruHtml);
-    if (posts !== null) {
-      const resultPosts = [];
-      for(const post of posts) {
-        const postId = post.postId;
-        const imagesArray = extractImages(post.postContent);
-        const htmlWithOutImages = deleteImages(post.postContent);
-        const markdownText = htmlToMd(htmlWithOutImages);
-        const rightMarkdown = fixMardown(markdownText);
-        const postText = addNamePost(rightMarkdown, post.postBlock);
-        resultPosts.push({ postId, postText, imagesArray });
-      }
-      return resultPosts;
+    const resultPosts: IPost[] = [];
+    for (const post of posts) {
+      const postId = post.postId;
+      const imagesArray = extractImages(post.postContent);
+      const htmlWithOutImages = deleteImages(post.postContent);
+      const markdownText = htmlToMd(htmlWithOutImages);
+      const rightMarkdown = fixMardown(markdownText);
+      const postText = addNamePost(rightMarkdown, post.postBlock);
+      resultPosts.push({ postId, postText, imagesArray });
     }
-    return null;
+    return resultPosts;
   } catch (e) {
     console.log(
       new ApiError(e.status || StatusCodes.INTERNAL_SERVER_ERROR, e.message),

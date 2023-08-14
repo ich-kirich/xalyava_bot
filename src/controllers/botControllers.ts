@@ -52,9 +52,10 @@ class BotControllers {
     const job = cron.schedule(timeCrone, async () => {
       const postsContent = await getPostsFromWebsite(linkSite);
       const chatsIds = await getUsersForMailing();
-      if (postsContent !== null) {
+      if (postsContent.length !== 0) {
         for (const postContent of postsContent) {
-          const media: InputMediaPhoto[] = postContent.imagesArray.map(
+          const { imagesArray, postText } = postContent;
+          const media: InputMediaPhoto[] = imagesArray.map(
             (imageUrl) => ({
               type: "photo",
               media: imageUrl,
@@ -63,7 +64,7 @@ class BotControllers {
           for (const chatId of chatsIds) {
             try {
               await bot.sendMediaGroup(chatId, media);
-              await bot.sendMessage(chatId, postContent.postText, {
+              await bot.sendMessage(chatId, postText, {
                 disable_web_page_preview: true,
                 parse_mode: "Markdown",
               });
