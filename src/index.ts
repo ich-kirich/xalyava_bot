@@ -7,11 +7,12 @@ import initDb from "../models/initDb";
 
 const startServer = async () => {
   try {
+    await initDb();
     const bot = new TelegramBot(config.get("telegram.apiKey"), {
       polling: true,
     });
     BotControllers.messagesToBot(bot);
-    await initDb();
+    BotControllers.sendPosts(bot);
     console.log("The bot is up and running");
   } catch (e) {
     console.log(

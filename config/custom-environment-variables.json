@@ -12,5 +12,8 @@
   },
   "telegram": {
     "apiKey": "TELEGRAM_KEY"
+  },
+  "sendPost": {
+    "timeCrone": "TIME_CRONE"
   }
 }

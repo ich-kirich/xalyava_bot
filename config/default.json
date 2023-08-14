@@ -8,5 +8,8 @@
     "host": "kubernetes.docker.internal",
     "port": "5432",
     "dialect": "postgres"
+  },
+  "sendPost": {
+    "timeCrone": "* * * * *"
   }
 }

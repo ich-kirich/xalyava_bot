@@ -2,8 +2,15 @@ import ApiError from "../error/apiError";
 import { StatusCodes } from "http-status-codes";
 import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
 import { linkSite, MESSAGES } from "../libs/constants";
-import { addNewUser, startMailing, stopMailing } from "../services/botServices";
+import {
+  addNewUser,
+  getUsersForMailing,
+  startMailing,
+  stopMailing,
+} from "../services/botServices";
 import getPostFromWebsite from "../libs/parsingSite";
+import config from "config";
+import cron from "node-cron";
 
 class BotControllers {
   messagesToBot(bot: TelegramBot) {
@@ -23,20 +30,6 @@ class BotControllers {
           case "/startxalyava":
             bot.sendMessage(chatId, MESSAGES.START_MAILING);
             await startMailing(userId);
-            const { postText, imagesArray } = await getPostFromWebsite(
-              linkSite,
-            );
-            const media: InputMediaPhoto[] = imagesArray.map(
-              (imageUrl) => ({
-                type: "photo",
-                media: imageUrl,
-              }),
-            );
-            await bot.sendMediaGroup(chatId, media);
-            await bot.sendMessage(chatId, postText, {
-              disable_web_page_preview: true,
-              parse_mode: "Markdown",
-            });
             break;
           case "/stopxalyava":
             bot.sendMessage(chatId, MESSAGES.STOP_MAILING);
@@ -52,6 +45,40 @@ class BotControllers {
         new ApiError(e.status || StatusCodes.INTERNAL_SERVER_ERROR, e.message),
       );
     }
+  }
+
+  sendPosts(bot: TelegramBot) {
+    const timeCrone: string = config.get("sendPost.timeCrone");
+    const job = cron.schedule(timeCrone, async () => {
+      const postContent = await getPostFromWebsite(linkSite);
+      const chatsIds = await getUsersForMailing();
+      if (postContent !== null) {
+        const media: InputMediaPhoto[] = postContent.imagesArray.map((imageUrl) => ({
+          type: "photo",
+          media: imageUrl,
+        }));
+        for (const chatId of chatsIds) {
+          try {
+            await bot.sendMediaGroup(chatId, media);
+            await bot.sendMessage(chatId, postContent.postText, {
+              disable_web_page_preview: true,
+              parse_mode: "Markdown",
+            });
+          } catch (e) {
+            console.error(e.message);
+          }
+        }
+      } else {
+        for (const chatId of chatsIds) {
+          try {
+            bot.sendMessage(chatId, MESSAGES.NO_NEW_POSTS);
+          } catch (e) {
+            console.error(e.message);
+          }
+        }
+      }
+    });
+    job.start();
   }
 }
 
