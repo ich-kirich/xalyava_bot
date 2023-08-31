@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
-  "keywords": ["Dikaya Xalyava"],
+  "keywords": [
+    "Dikaya Xalyava"
+  ],
   "author": "Kirill Medved",
   "license": "ISC",
   "devDependencies": {
@@ -31,6 +33,8 @@
     "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",
     "config": "^3.3.9",
+    "google-auth-library": "^8.9.0",
+    "google-spreadsheet": "^4.0.2",
     "html-to-md": "^0.8.3",
     "iconv-lite": "^0.6.3",
     "node-cron": "^3.0.2",

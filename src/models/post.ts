@@ -1,5 +1,5 @@
 import { DataTypes, Model } from "sequelize";
-import sequelize from "../src/db";
+import sequelize from "../db";
 
 class Post extends Model {
   public id!: number;

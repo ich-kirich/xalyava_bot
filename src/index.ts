@@ -1,7 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import config from "config";
 import BotControllers from "./controllers/botControllers";
-import initDb from "../models/initDb";
+import initDb from "./models/initDb";
 import logger from "./libs/logger";
 import ApiError from "./error/apiError";
 

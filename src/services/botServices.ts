@@ -1,6 +1,6 @@
 import logger from "../libs/logger";
-import Post from "../../models/post";
-import User from "../../models/user";
+import Post from "../models/post";
+import User from "../models/user";
 import ApiError from "../error/apiError";
 
 export async function addNewUser(userId: number): Promise<void> {
@@ -36,7 +36,7 @@ export async function stopMailing(userId: number): Promise<void> {
   );
 }
 
-export async function addPosts(postsIds: number[]): Promise<number[]> {
+export async function updatePosts(postsIds: number[]): Promise<number[]> {
   const notAddedPosts: number[] = [];
 
   for (const postId of postsIds) {
@@ -44,8 +44,6 @@ export async function addPosts(postsIds: number[]): Promise<number[]> {
 
     if (!existingPost) {
       try {
-        await Post.create({ postId });
-        logger.info(`Added post with postId: ${postId}`);
         notAddedPosts.push(postId);
       } catch (e) {
         logger.error(
@@ -55,6 +53,22 @@ export async function addPosts(postsIds: number[]): Promise<number[]> {
         throw new ApiError(e.status, e.message);
       }
     }
+
+    if (notAddedPosts.length >= 0) {
+      try {
+        await Post.destroy({ truncate: true });
+        const newPosts = postsIds.map((postId) => ({ postId }));
+        await Post.bulkCreate(newPosts);
+      } catch (e) {
+        logger.error(
+          `Error when updating post: ${postsIds}`,
+          new ApiError(e.status, e.message),
+        );
+        throw new ApiError(e.status, e.message);
+      }
+    }
+
+    logger.info(`Update posts: ${notAddedPosts}`);
   }
 
   return notAddedPosts;

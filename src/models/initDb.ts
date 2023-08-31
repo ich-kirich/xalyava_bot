@@ -1,5 +1,5 @@
-import logger from "../src/libs/logger";
-import sequelize from "../src/db";
+import logger from "../libs/logger";
+import sequelize from "../db";
 
 const initDb = async (): Promise<void> => {
   await sequelize.authenticate();

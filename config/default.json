@@ -1,11 +1,8 @@
 {
-  "server": {
-    "port": 5000
-  },
   "db": {
-    "database": "XalyavaBot",
-    "username": "postgres",
-    "host": "kubernetes.docker.internal",
+    "database": "iicexkxg",
+    "username": "iicexkxg",
+    "host": "abul.db.elephantsql.com",
     "port": "5432",
     "dialect": "postgres"
   },

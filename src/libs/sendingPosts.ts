@@ -41,10 +41,7 @@ async function sendPost(
         disable_web_page_preview: true,
         parse_mode: "Markdown",
       });
-      logger.info(
-        `Bot sent a post to the user with this id: ${chatId}`,
-        postContent,
-      );
+      logger.info(`Bot sent a post to the user with this id: ${chatId}`);
     } catch (e) {
       logger.error(
         `Error when sending a post to a user with id: ${chatId}`,
