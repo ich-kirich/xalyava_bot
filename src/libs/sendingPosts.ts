@@ -23,7 +23,7 @@ async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   }
 }
 
-async function sendPost(
+export async function sendPost(
   bot: TelegramBot,
   postContent: IPost,
   chatsIds: number[],
@@ -53,7 +53,7 @@ async function sendPost(
   }
 }
 
-async function sendingPosts(bot: TelegramBot) {
+export async function sendingPosts(bot: TelegramBot) {
   const postsContent = await getPostsFromWebsite(linkSite);
   if(postsContent.length > 0) {
     await updateTodayPost(postsContent[0]);
@@ -70,5 +70,3 @@ async function sendingPosts(bot: TelegramBot) {
   }
   return;
 }
-
-export default sendingPosts;

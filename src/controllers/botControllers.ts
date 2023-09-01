@@ -10,7 +10,7 @@ import config from "config";
 import cron from "node-cron";
 import logger from "../libs/logger";
 import ApiError from "../error/apiError";
-import sendingPosts from "../libs/sendingPosts";
+import { sendingPosts, sendPost } from "../libs/sendingPosts";
 
 class BotControllers {
   messagesToBot(bot: TelegramBot) {
@@ -33,11 +33,10 @@ class BotControllers {
             await startMailing(userId);
             if (post.length > 0) {
               bot.sendMessage(chatId, MESSAGES.POST_DB);
-              // сюда функцию отправки поста
+              await sendPost(bot, post[0].dataValues, [chatId]);
             } else {
-              bot.sendMessage(chatId, MESSAGES.NO_POST_DV);
+              bot.sendMessage(chatId, MESSAGES.NO_POST_DB);
             }
-            bot.sendMessage(chatId, MESSAGES.START_MAILING);
             break;
           case "/stopxalyava":
             bot.sendMessage(chatId, MESSAGES.STOP_MAILING);
