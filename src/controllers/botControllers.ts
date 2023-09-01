@@ -2,6 +2,7 @@ import TelegramBot from "node-telegram-bot-api";
 import { MESSAGES } from "../libs/constants";
 import {
   addNewUser,
+  getTodayPost,
   startMailing,
   stopMailing,
 } from "../services/botServices";
@@ -28,7 +29,15 @@ class BotControllers {
             break;
           case "/startxalyava":
             bot.sendMessage(chatId, MESSAGES.START_MAILING);
+            const post = await getTodayPost();
             await startMailing(userId);
+            if (post.length > 0) {
+              bot.sendMessage(chatId, MESSAGES.POST_DB);
+              // сюда функцию отправки поста
+            } else {
+              bot.sendMessage(chatId, MESSAGES.NO_POST_DV);
+            }
+            bot.sendMessage(chatId, MESSAGES.START_MAILING);
             break;
           case "/stopxalyava":
             bot.sendMessage(chatId, MESSAGES.STOP_MAILING);

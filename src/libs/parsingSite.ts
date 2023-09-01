@@ -2,11 +2,23 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import * as iconv from "iconv-lite";
 import htmlToMd from "html-to-md";
-import { addSpacesToMarkdownLink, removeSpecialCharacters } from "./utils";
+import { addSpacesToMarkdownLink, escapeMarkdownSpecialCharacters, removeSpecialCharacters } from "./utils";
 import { updatePosts } from "../services/botServices";
 import { IPost, IPostInf } from "../types/types";
 import logger from "./logger";
 import ApiError from "../error/apiError";
+
+function getLinksVideos(html: string): string[] {
+  const $ = cheerio.load(html);
+  const videoLinks: string[] = [];
+  $(".player").each((index, element) => {
+    const videoSource = $(element).attr("data-source");
+    if (videoSource) {
+      videoLinks.push(escapeMarkdownSpecialCharacters(videoSource));
+    }
+  });
+  return videoLinks;
+}
 
 async function getPosts(html: string): Promise<IPostInf[]> {
   const $ = cheerio.load(html);
@@ -25,7 +37,10 @@ async function getPosts(html: string): Promise<IPostInf[]> {
       const postContent = cheerio
         .load(postBlock)(".story__content-inner")
         .html();
-      resultPosts.push({ postId, postBlock, postContent });
+      const linksVideos = getLinksVideos(
+        cheerio.load(postBlock)(".story__content-inner").html(),
+      );
+      resultPosts.push({ postId, postBlock, postContent, linksVideos });
     }
   }
   logger.info("Received an array of posts for distribution");
@@ -60,6 +75,11 @@ function addNamePost(mardownText: string, html: string): string {
   return finalText;
 }
 
+function addVideoLinks(postText: string, linksVideos: string[]) {
+  const linksString = "\n" + linksVideos.join("\n");
+  return postText + "\n" + linksString;
+}
+
 function fixMardown(text: string): string {
   const removeBold = text.replace(/\*\*(.*?)\*\*/g, "$1");
   const escapeMardownList = removeBold.replace(/\*/g, "\\*");
@@ -81,12 +101,13 @@ async function getPostsFromWebsite(url: string): Promise<IPost[]> {
     const posts = await getPosts(ruHtml);
     const resultPosts: IPost[] = [];
     for (const post of posts) {
-      const { postId, postContent, postBlock } = post;
+      const { postId, postContent, postBlock, linksVideos } = post;
       const imagesArray = extractImages(postContent);
       const htmlWithOutImages = deleteImages(postContent);
       const markdownText = htmlToMd(htmlWithOutImages);
       const rightMarkdown = fixMardown(markdownText);
-      const postText = addNamePost(rightMarkdown, postBlock);
+      const textWithName = addNamePost(rightMarkdown, postBlock);
+      const postText = addVideoLinks(textWithName, linksVideos);
       resultPosts.push({ postId, postText, imagesArray });
     }
     logger.info("Final array of posts for distribution was obtained");
