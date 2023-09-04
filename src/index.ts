@@ -5,9 +5,6 @@ import initDb from "./models/initDb";
 import logger from "./libs/logger";
 import ApiError from "./error/apiError";
 
-console.log(config.get("telegram.apiKey"));
-console.log(config.get("db.password"));
-
 const startBot = async () => {
   try {
     console.log(1)
