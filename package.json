@@ -16,6 +16,7 @@
   "author": "Kirill Medved",
   "license": "ISC",
   "devDependencies": {
+    "@types/cheerio": "^0.22.31",
     "@types/config": "^3.3.0",
     "@types/jest": "^29.5.4",
     "@types/node-cron": "^3.0.8",
@@ -23,6 +24,7 @@
     "@types/sequelize": "^4.28.15",
     "@typescript-eslint/eslint-plugin": "^6.2.0",
     "@typescript-eslint/parser": "^6.2.0",
+    "cheerio": "^1.0.0-rc.12",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^8.9.0",
     "eslint-plugin-prettier": "^5.0.0",
@@ -35,7 +37,6 @@
   },
   "dependencies": {
     "axios": "^1.4.0",
-    "cheerio": "^1.0.0-rc.12",
     "config": "^3.3.9",
     "google-auth-library": "^8.9.0",
     "google-spreadsheet": "^4.0.2",

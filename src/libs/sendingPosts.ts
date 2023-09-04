@@ -4,7 +4,7 @@ import ApiError from "../error/apiError";
 import { getUsersForMailing, updateTodayPost } from "../services/botServices";
 import { linkSite, MESSAGES } from "./constants";
 import logger from "./logger";
-import getPostsFromWebsite from "./parsingSite";
+import { getPostsFromWebsite } from "./parsingSite";
 
 async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   for (const chatId of chatsIds) {
@@ -55,7 +55,7 @@ export async function sendPost(
 
 export async function sendingPosts(bot: TelegramBot) {
   const postsContent = await getPostsFromWebsite(linkSite);
-  if(postsContent.length > 0) {
+  if (postsContent.length > 0) {
     await updateTodayPost(postsContent[0]);
   }
   const chatsIds = await getUsersForMailing();

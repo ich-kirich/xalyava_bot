@@ -8,7 +8,7 @@ import { IPost, IPostInf } from "../types/types";
 import logger from "./logger";
 import ApiError from "../error/apiError";
 
-function getLinksVideos(html: string): string[] {
+export function getLinksVideos(html: string): string[] {
   const $ = cheerio.load(html);
   const videoLinks: string[] = [];
   $(".player").each((index, element) => {
@@ -20,7 +20,7 @@ function getLinksVideos(html: string): string[] {
   return videoLinks;
 }
 
-async function getPosts(html: string): Promise<IPostInf[]> {
+export async function getPosts(html: string): Promise<IPostInf[]> {
   const $ = cheerio.load(html);
   const storiesDivs = $(".story").toArray().slice(0, 5);
   const postsIds = storiesDivs.map((storyDiv) =>
@@ -44,6 +44,7 @@ async function getPosts(html: string): Promise<IPostInf[]> {
     }
   }
   logger.info("Received an array of posts for distribution");
+  console.log(resultPosts);
   return resultPosts;
 }
 
@@ -64,23 +65,23 @@ function deleteImages(html: string): string {
   return $.html();
 }
 
-function addNamePost(mardownText: string, html: string): string {
+function addNamePost(markdownText: string, html: string): string {
   const $ = cheerio.load(html);
   const link = $(".story__title-link");
   const title = removeSpecialCharacters(link.text());
   const href = link.attr("href");
   const namePost = `[${title}](${href})`;
-  const finalText = `${namePost}\n\n${mardownText}`;
+  const finalText = `${namePost}\n\n${markdownText}`;
   logger.info("Title and text of the post have been merged");
   return finalText;
 }
 
-function addVideoLinks(postText: string, linksVideos: string[]) {
+export function addVideoLinks(postText: string, linksVideos: string[]) {
   const linksString = "\n" + linksVideos.join("\n");
   return postText + "\n" + linksString;
 }
 
-function fixMardown(text: string): string {
+export function fixMarkdown(text: string): string {
   const removeBold = text.replace(/\*\*(.*?)\*\*/g, "$1");
   const escapeMardownList = removeBold.replace(/\*/g, "\\*");
   const removeSlash = escapeMardownList.replace(/\\\]/g, "]");
@@ -89,7 +90,7 @@ function fixMardown(text: string): string {
   return addSpaceLink;
 }
 
-async function getPostsFromWebsite(url: string): Promise<IPost[]> {
+export async function getPostsFromWebsite(url: string): Promise<IPost[]> {
   try {
     const response = await axios.get(url, {
       headers: {
@@ -105,7 +106,7 @@ async function getPostsFromWebsite(url: string): Promise<IPost[]> {
       const imagesArray = extractImages(postContent);
       const htmlWithOutImages = deleteImages(postContent);
       const markdownText = htmlToMd(htmlWithOutImages);
-      const rightMarkdown = fixMardown(markdownText);
+      const rightMarkdown = fixMarkdown(markdownText);
       const textWithName = addNamePost(rightMarkdown, postBlock);
       const postText = addVideoLinks(textWithName, linksVideos);
       resultPosts.push({ postId, postText, imagesArray });
@@ -120,5 +121,3 @@ async function getPostsFromWebsite(url: string): Promise<IPost[]> {
     throw new ApiError(e.status, e.message);
   }
 }
-
-export default getPostsFromWebsite;
