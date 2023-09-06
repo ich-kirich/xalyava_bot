@@ -1,3 +1,4 @@
+// TODO: mock
 import logger from "../libs/logger";
 import Post from "../models/post";
 import User from "../models/user";
@@ -117,7 +118,6 @@ export async function getTodayPost() {
   try {
     const allPosts = await TodayPost.findAll();
     logger.info("Today's post was received");
-    console.log(allPosts[0].dataValues);
     return allPosts;
   } catch (e) {
     logger.error(

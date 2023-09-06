@@ -6,6 +6,7 @@ import { linkSite, MESSAGES } from "./constants";
 import logger from "./logger";
 import { getPostsFromWebsite } from "./parsingSite";
 
+// TODO: mock
 async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   for (const chatId of chatsIds) {
     try {
@@ -23,13 +24,13 @@ async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   }
 }
 
+// TODO: mock
 export async function sendPost(
   bot: TelegramBot,
   postContent: IPost,
   chatsIds: number[],
 ) {
   const { imagesArray, postText } = postContent;
-  console.log(postText);
   const media: InputMediaPhoto[] = imagesArray.map((imageUrl) => ({
     type: "photo",
     media: imageUrl,
@@ -53,6 +54,7 @@ export async function sendPost(
   }
 }
 
+// TODO: mock
 export async function sendingPosts(bot: TelegramBot) {
   const postsContent = await getPostsFromWebsite(linkSite);
   if (postsContent.length > 0) {

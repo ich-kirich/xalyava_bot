@@ -9,6 +9,7 @@ import logger from "./logger";
 import ApiError from "../error/apiError";
 
 export function getLinksVideos(html: string): string[] {
+  console.log(cheerio);
   const $ = cheerio.load(html);
   const videoLinks: string[] = [];
   $(".player").each((index, element) => {
