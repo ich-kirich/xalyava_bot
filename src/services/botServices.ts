@@ -1,4 +1,3 @@
-// TODO: mock
 import logger from "../libs/logger";
 import Post from "../models/post";
 import User from "../models/user";

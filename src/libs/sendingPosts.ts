@@ -6,8 +6,7 @@ import { linkSite, MESSAGES } from "./constants";
 import logger from "./logger";
 import { getPostsFromWebsite } from "./parsingSite";
 
-// TODO: mock
-async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
+export async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   for (const chatId of chatsIds) {
     try {
       await bot.sendMessage(chatId, MESSAGES.NO_NEW_POSTS);
@@ -24,7 +23,6 @@ async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   }
 }
 
-// TODO: mock
 export async function sendPost(
   bot: TelegramBot,
   postContent: IPost,
@@ -54,7 +52,6 @@ export async function sendPost(
   }
 }
 
-// TODO: mock
 export async function sendingPosts(bot: TelegramBot) {
   const postsContent = await getPostsFromWebsite(linkSite);
   if (postsContent.length > 0) {
@@ -70,5 +67,4 @@ export async function sendingPosts(bot: TelegramBot) {
   for (const postContent of postsContent) {
     await sendPost(bot, postContent, chatsIds);
   }
-  return;
 }
