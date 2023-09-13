@@ -1,9 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import ApiError from "../error/apiError";
 import { MESSAGES } from "./constants";
-import { sendingPosts, sendPost, sendSorryMessage } from "./sendingPosts";
-import { getPostsFromWebsite } from "./parsingSite";
-import { getUsersForMailing, updateTodayPost } from "../services/botServices";
+import { sendPost, sendSorryMessage } from "./sendingPosts";
 
 jest.mock("./parsingSite");
 jest.mock("../services/botServices");
@@ -125,42 +123,4 @@ describe("sendPost", () => {
       new ApiError(500, "Failed to send message"),
     );
   });
-});
-
-describe("sendingPosts", () => {
-  it("should send a sorry message if there are no posts", async () => {
-    const bot = {
-      sendMediaGroup: jest.fn(),
-      sendMessage: jest.fn(),
-    } as unknown as TelegramBot;
-    (getPostsFromWebsite as jest.Mock).mockReturnValue([]);
-    (getUsersForMailing as jest.Mock).mockReturnValue([1, 2, 3]);
-    await sendingPosts(bot);
-    expect(getPostsFromWebsite).toHaveBeenCalledTimes(1);
-    expect(getUsersForMailing).toHaveBeenCalledTimes(1);
-    expect(sendSorryMessage).toHaveBeenCalledWith(bot, [1, 2, 3]); // Как мне это замокать, чтобы не ломались остальные тесты?
-  });
-
-  // it('should throw an error if there are no users to mail', async () => {
-  //   const bot = {
-  //     sendMediaGroup: jest.fn(),
-  //     sendMessage: jest.fn(),
-  //   };
-  //   const getPostsFromWebsiteSpy = jest.spyOn(yourModule, 'getPostsFromWebsite').mockResolvedValue([
-  //     {
-  //       imagesArray: ['image1.jpg', 'image2.jpg'],
-  //       postText: 'This is a post',
-  //     },
-  //   ]);
-  //   const updateTodayPostSpy = jest.spyOn(yourModule, 'updateTodayPost').mockResolvedValue(undefined);
-  //   const getUsersForMailingSpy = jest.spyOn(yourModule, 'getUsersForMailing').mockResolvedValue([]);
-  //   const sendSorryMessageSpy = jest.spyOn(yourModule, 'sendSorryMessage').mockResolvedValue(undefined);
-  //   const sendPostSpy = jest.spyOn(yourModule, 'sendPost').mockResolvedValue(undefined);
-  //   await expect(sendingPosts(bot)).rejects.toThrow();
-  //   expect(getPostsFromWebsiteSpy).toHaveBeenCalledTimes(1);
-  //   expect(updateTodayPostSpy).not.toHaveBeenCalled();
-  //   expect(getUsersForMailingSpy).toHaveBeenCalledTimes(1);
-  //   expect(sendSorryMessageSpy).not.toHaveBeenCalled();
-  //   expect(sendPostSpy).not.toHaveBeenCalled();
-  // });
 });

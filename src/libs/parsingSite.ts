@@ -88,35 +88,3 @@ export function fixMarkdown(text: string): string {
   logger.info("Mardown the post markup has been corrected");
   return addSpaceLink;
 }
-
-export async function getPostsFromWebsite(url: string): Promise<IPost[]> {
-  try {
-    const response = await axios.get(url, {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-      },
-      responseType: "arraybuffer",
-    });
-    const ruHtml = iconv.decode(response.data, "win1251");
-    const posts = await getPosts(ruHtml);
-    const resultPosts: IPost[] = [];
-    for (const post of posts) {
-      const { postId, postContent, postBlock, linksVideos } = post;
-      const imagesArray = extractImages(postContent);
-      const htmlWithOutImages = deleteImages(postContent);
-      const markdownText = htmlToMd(htmlWithOutImages);
-      const rightMarkdown = fixMarkdown(markdownText);
-      const textWithName = addNamePost(rightMarkdown, postBlock);
-      const postText = addVideoLinks(textWithName, linksVideos);
-      resultPosts.push({ postId, postText, imagesArray });
-    }
-    logger.info("Final array of posts for distribution was obtained");
-    return resultPosts;
-  } catch (e) {
-    logger.error(
-      "Error when generating the final array with posts for distribution",
-      new ApiError(e.status, e.message),
-    );
-    throw new ApiError(e.status, e.message);
-  }
-}

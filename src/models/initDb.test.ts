@@ -18,3 +18,7 @@ describe("initDb", () => {
     );
   });
 });
+
+afterAll(()=> {
+  sequelize.close();
+})

@@ -1,4 +1,3 @@
-import axios from "axios";
 import { updatePosts } from "../services/botServices";
 import {
   addNamePost,
@@ -14,10 +13,6 @@ jest.mock("axios");
 jest.mock("../services/botServices");
 
 let index = 0;
-
-const loadCheerio = jest.fn().mockImplementation(() => {
-  return { attr, each, toArray, remove, html, text };
-});
 
 const text = jest.fn(() => {
   return "Post Title";
@@ -61,6 +56,21 @@ const toArray = jest.fn(() => {
     },
   };
 });
+
+const cheerioMock = {
+  html,
+};
+
+const loadCheerio = jest.fn().mockImplementation(() => {
+  return {
+    attr,
+    each,
+    toArray,
+    remove,
+    text,
+    html,
+  };
+}); // Надо как-то объединть cheerioMock и loadCheerio и передать в load
 
 jest.mock("cheerio", () => {
   return {
@@ -118,7 +128,7 @@ describe("extractImages", () => {
 });
 
 // describe("deleteImages", () => {
-//   it("should remove .story-image__image elements from HTML", () => {
+//   test("should remove .story-image__image elements from HTML", () => {
 //     const html =
 //       '<div class="story-image__image"></div><div class="story__content"></div>';
 //     const result = deleteImages(html);
@@ -215,20 +225,3 @@ describe("fixMarkdown", () => {
     expect(result).toEqual(expectedOutput);
   });
 });
-
-// describe("getPostsFromWebsite", () => {
-//   it("should return an array of posts", async () => {
-//     const url = "https://example.com/posts";
-//     const response = { data: "HTML content" };
-//     (axios.get as jest.Mock).mockReturnValue(response);
-//     const html = '<div class="story"></div><div class="story"></div>';
-//     const getPostsMock = jest.fn().mockResolvedValue([
-//       {
-//         postId: 1,
-//         postContent: "Post content",
-//         postBlock: "Post block",
-//         linksVideos: [],
-//       },
-//     ]);
-//   });
-// });
