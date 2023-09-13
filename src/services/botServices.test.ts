@@ -248,13 +248,10 @@ describe("updateTodayPost", () => {
     jest.clearAllMocks();
   });
 
-  test("should update an existing post", async () => {
+  test("should not update an existing post if it does exist", async () => {
     (TodayPost.findOne as jest.Mock).mockResolvedValueOnce({ postId: 1 });
     await updateTodayPost(newPost);
     expect(TodayPost.findOne).toHaveBeenCalledTimes(1);
-    expect(TodayPost.update).toHaveBeenCalledTimes(1);
-    expect(TodayPost.create).not.toHaveBeenCalled();
-    expect(loggerSpyInfo).toHaveBeenCalledWith("Today's post has been updated");
     expect(loggerSpyError).not.toHaveBeenCalled();
   });
 

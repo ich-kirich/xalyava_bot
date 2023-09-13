@@ -61,6 +61,7 @@ export function extractImages(html: string): string[] {
 export function deleteImages(html: string): string {
   const $ = cheerio.load(html);
   $(".story-image__image").remove();
+  console.log($)
   return $.html();
 }
 

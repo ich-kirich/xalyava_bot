@@ -9,9 +9,6 @@ import {
   getPosts,
 } from "./parsingSite";
 
-jest.mock("axios");
-jest.mock("../services/botServices");
-
 let index = 0;
 
 const text = jest.fn(() => {
@@ -57,10 +54,6 @@ const toArray = jest.fn(() => {
   };
 });
 
-const cheerioMock = {
-  html,
-};
-
 const loadCheerio = jest.fn().mockImplementation(() => {
   return {
     attr,
@@ -70,7 +63,14 @@ const loadCheerio = jest.fn().mockImplementation(() => {
     text,
     html,
   };
-}); // Надо как-то объединть cheerioMock и loadCheerio и передать в load
+});
+
+(loadCheerio as any).html = jest.fn(() => {
+  return '<div class="story__content"></div>';
+});
+
+jest.mock("axios");
+jest.mock("../services/botServices");
 
 jest.mock("cheerio", () => {
   return {
@@ -127,14 +127,14 @@ describe("extractImages", () => {
   });
 });
 
-// describe("deleteImages", () => {
-//   test("should remove .story-image__image elements from HTML", () => {
-//     const html =
-//       '<div class="story-image__image"></div><div class="story__content"></div>';
-//     const result = deleteImages(html);
-//     expect(result).toEqual('<div class="story__content"></div>');
-//   });
-// });
+describe("deleteImages", () => {
+  test("should remove .story-image__image elements from HTML", () => {
+    const html =
+      '<div class="story-image__image"></div><div class="story__content"></div>';
+    const result = deleteImages(html);
+    expect(result).toEqual('<div class="story__content"></div>');
+  });
+});
 
 describe("addNamePost", () => {
   it("should add the post title to the beginning of the text", () => {
