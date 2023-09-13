@@ -95,10 +95,8 @@ export async function updateTodayPost(newPost: IPost) {
     const existingPost = await TodayPost.findOne({
       where: { postId },
     });
-    if (existingPost) {
-      await TodayPost.update(newPost, { where: {} });
-      logger.info("Today's post has been updated");
-    } else {
+    if (!existingPost) {
+      await TodayPost.destroy({ where: {} });
       await TodayPost.create({ imagesArray, postText, postId });
       logger.info(
         `Today's post has been updated to a post with this id: ${postId}`,
