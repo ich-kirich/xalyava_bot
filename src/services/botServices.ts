@@ -95,8 +95,10 @@ export async function updateTodayPost(newPost: IPost) {
     const existingPost = await TodayPost.findOne({
       where: { postId },
     });
-    if (!existingPost) {
-      await TodayPost.destroy({ where: {} });
+    if (existingPost) {
+      await TodayPost.update(newPost, { where: {} });
+      logger.info("Today's post has been updated");
+    } else {
       await TodayPost.create({ imagesArray, postText, postId });
       logger.info(
         `Today's post has been updated to a post with this id: ${postId}`,
@@ -115,6 +117,7 @@ export async function getTodayPost() {
   try {
     const allPosts = await TodayPost.findAll();
     logger.info("Today's post was received");
+    console.log(allPosts[0].dataValues);
     return allPosts;
   } catch (e) {
     logger.error(

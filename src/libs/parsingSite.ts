@@ -44,10 +44,11 @@ export async function getPosts(html: string): Promise<IPostInf[]> {
     }
   }
   logger.info("Received an array of posts for distribution");
+  console.log(resultPosts);
   return resultPosts;
 }
 
-export function extractImages(html: string): string[] {
+function extractImages(html: string): string[] {
   const $ = cheerio.load(html);
   const imageSrcArray: string[] = [];
   $(".story-image__image[data-src]").each((index, element) => {
@@ -58,14 +59,13 @@ export function extractImages(html: string): string[] {
   return imageSrcArray;
 }
 
-export function deleteImages(html: string): string {
+function deleteImages(html: string): string {
   const $ = cheerio.load(html);
   $(".story-image__image").remove();
-  console.log($)
   return $.html();
 }
 
-export function addNamePost(markdownText: string, html: string): string {
+function addNamePost(markdownText: string, html: string): string {
   const $ = cheerio.load(html);
   const link = $(".story__title-link");
   const title = removeSpecialCharacters(link.text());
@@ -88,4 +88,36 @@ export function fixMarkdown(text: string): string {
   const addSpaceLink = addSpacesToMarkdownLink(removeSlash);
   logger.info("Mardown the post markup has been corrected");
   return addSpaceLink;
+}
+
+export async function getPostsFromWebsite(url: string): Promise<IPost[]> {
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+      },
+      responseType: "arraybuffer",
+    });
+    const ruHtml = iconv.decode(response.data, "win1251");
+    const posts = await getPosts(ruHtml);
+    const resultPosts: IPost[] = [];
+    for (const post of posts) {
+      const { postId, postContent, postBlock, linksVideos } = post;
+      const imagesArray = extractImages(postContent);
+      const htmlWithOutImages = deleteImages(postContent);
+      const markdownText = htmlToMd(htmlWithOutImages);
+      const rightMarkdown = fixMarkdown(markdownText);
+      const textWithName = addNamePost(rightMarkdown, postBlock);
+      const postText = addVideoLinks(textWithName, linksVideos);
+      resultPosts.push({ postId, postText, imagesArray });
+    }
+    logger.info("Final array of posts for distribution was obtained");
+    return resultPosts;
+  } catch (e) {
+    logger.error(
+      "Error when generating the final array with posts for distribution",
+      new ApiError(e.status, e.message),
+    );
+    throw new ApiError(e.status, e.message);
+  }
 }

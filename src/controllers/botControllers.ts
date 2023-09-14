@@ -10,8 +10,7 @@ import config from "config";
 import cron from "node-cron";
 import logger from "../libs/logger";
 import ApiError from "../error/apiError";
-import { sendPost } from "../libs/sendingPosts";
-import { postDelivery } from "../libs/postDelivery";
+import { sendingPosts, sendPost } from "../libs/sendingPosts";
 
 class BotControllers {
   messagesToBot(bot: TelegramBot) {
@@ -62,7 +61,7 @@ class BotControllers {
   sendPosts(bot: TelegramBot) {
     const timeCrone: string = config.get("sendPost.timeCrone");
     const job = cron.schedule(timeCrone, async () => {
-      await postDelivery(bot);
+      await sendingPosts(bot);
     });
     job.start();
     logger.info("Bot has started a daily mailing");
