@@ -7,7 +7,11 @@ import ApiError from "./error/apiError";
 
 const startBot = async () => {
   try {
-    await initDb();
+    try {
+      await initDb();
+    } catch(e) {
+      logger.error("Bot startup error", new ApiError(e.status, e.message));
+    }
     const bot = new TelegramBot(config.get("telegram.apiKey"), {
       polling: true,
     });
