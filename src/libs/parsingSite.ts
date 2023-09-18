@@ -44,7 +44,6 @@ export async function getPosts(html: string): Promise<IPostInf[]> {
     }
   }
   logger.info("Received an array of posts for distribution");
-  console.log(resultPosts);
   return resultPosts;
 }
 

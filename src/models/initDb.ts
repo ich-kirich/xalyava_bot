@@ -2,7 +2,7 @@ import logger from "../libs/logger";
 import sequelize from "../db";
 
 const initDb = async (): Promise<void> => {
-  await sequelize.sync();
+  await sequelize.authenticate();
   logger.info("Database connection established successfully");
   return;
 };
