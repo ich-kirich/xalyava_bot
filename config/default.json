@@ -1,8 +1,8 @@
 {
   "db": {
-    "database": "iicexkxg",
-    "username": "iicexkxg",
-    "host": "abul.db.elephantsql.com",
+    "database": "beu3vfsdil5edqw3417d",
+    "username": "u4bqt9s6rns6osdksdho",
+    "host": "beu3vfsdil5edqw3417d-postgresql.services.clever-cloud.com",
     "port": "5432",
     "dialect": "postgres"
   },
