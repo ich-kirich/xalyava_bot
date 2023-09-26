@@ -1,5 +1,7 @@
 # Xalyava-Bot
 This is a bot that performs the function of sending out giveaways of free access to programs
+- Implemented a mailing bot with posts from this site: https://pikabu.ru/community/steam.
+- Link to bot: https://t.me/MegaxalyavaBot
 ***
 #### Launch bot:
 - npm start - build the project and start the bot
