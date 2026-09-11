@@ -1,4 +1,4 @@
-import { updatePosts } from "../services/botServices";
+import { updatePosts } from "../../src/services/botServices";
 import {
   addNamePost,
   addVideoLinks,
@@ -7,7 +7,7 @@ import {
   fixMarkdown,
   getLinksVideos,
   getPosts,
-} from "./parsingSite";
+} from "../../src/libs/parsingSite";
 
 let index = 0;
 
@@ -70,7 +70,7 @@ const loadCheerio = jest.fn().mockImplementation(() => {
 });
 
 jest.mock("axios");
-jest.mock("../services/botServices");
+jest.mock("../../src/services/botServices");
 
 jest.mock("cheerio", () => {
   return {

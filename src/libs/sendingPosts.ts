@@ -6,7 +6,7 @@ import { linkSite, MESSAGES } from "./constants";
 import logger from "./logger";
 import { getPostsFromWebsite } from "./parsingSite";
 
-async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
+export async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   for (const chatId of chatsIds) {
     try {
       await bot.sendMessage(chatId, MESSAGES.NO_NEW_POSTS);
@@ -29,7 +29,6 @@ export async function sendPost(
   chatsIds: number[],
 ) {
   const { imagesArray, postText } = postContent;
-  console.log(postText);
   const media: InputMediaPhoto[] = imagesArray.map((imageUrl) => ({
     type: "photo",
     media: imageUrl,
@@ -55,9 +54,6 @@ export async function sendPost(
 
 export async function sendingPosts(bot: TelegramBot) {
   const postsContent = await getPostsFromWebsite(linkSite);
-  if (postsContent.length > 0) {
-    await updateTodayPost(postsContent[0]);
-  }
   const chatsIds = await getUsersForMailing();
 
   if (postsContent.length === 0) {
@@ -65,8 +61,8 @@ export async function sendingPosts(bot: TelegramBot) {
     return;
   }
 
+  await updateTodayPost(postsContent[0]);
   for (const postContent of postsContent) {
     await sendPost(bot, postContent, chatsIds);
   }
-  return;
 }

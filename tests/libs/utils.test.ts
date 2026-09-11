@@ -1,4 +1,4 @@
-import { addSpacesToMarkdownLink, escapeMarkdownSpecialCharacters, removeSpecialCharacters } from "./utils";
+import { addSpacesToMarkdownLink, escapeMarkdownSpecialCharacters, removeSpecialCharacters } from "../../src/libs/utils";
 
 describe("addSpacesToMarkdownLink", () => {
   test("should add spaces around Markdown links", () => {

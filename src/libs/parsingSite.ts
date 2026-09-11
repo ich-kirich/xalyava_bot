@@ -44,11 +44,10 @@ export async function getPosts(html: string): Promise<IPostInf[]> {
     }
   }
   logger.info("Received an array of posts for distribution");
-  console.log(resultPosts);
   return resultPosts;
 }
 
-function extractImages(html: string): string[] {
+export function extractImages(html: string): string[] {
   const $ = cheerio.load(html);
   const imageSrcArray: string[] = [];
   $(".story-image__image[data-src]").each((index, element) => {
@@ -59,13 +58,13 @@ function extractImages(html: string): string[] {
   return imageSrcArray;
 }
 
-function deleteImages(html: string): string {
+export function deleteImages(html: string): string {
   const $ = cheerio.load(html);
   $(".story-image__image").remove();
   return $.html();
 }
 
-function addNamePost(markdownText: string, html: string): string {
+export function addNamePost(markdownText: string, html: string): string {
   const $ = cheerio.load(html);
   const link = $(".story__title-link");
   const title = removeSpecialCharacters(link.text());

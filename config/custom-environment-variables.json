@@ -3,12 +3,19 @@
     "database": "DATABASE",
     "username": "USER",
     "host": "HOST",
-    "port": "PORT",
+    "port": "DATABASE_PORT",
     "dialect": "DIALECT",
-    "password": "PASSWORD"
+    "password": "PASSWORD",
+    "retryAttempts": "DB_RETRY_ATTEMPTS",
+    "retryDelayMs": "DB_RETRY_DELAY_MS"
+  },
+  "http": {
+    "port": "PORT"
   },
   "telegram": {
-    "apiKey": "TELEGRAM_KEY"
+    "apiKey": "TELEGRAM_KEY",
+    "webhookUrl": "WEBHOOK_URL",
+    "webhookSecret": "WEBHOOK_SECRET"
   },
   "sendPost": {
     "timeCrone": "TIME_CRONE"

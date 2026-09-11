@@ -1,5 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
-import { MESSAGES } from "../libs/constants";
+import { getHelloMessage, MESSAGES } from "../libs/constants";
 import {
   addNewUser,
   getTodayPost,
@@ -10,7 +10,7 @@ import config from "config";
 import cron from "node-cron";
 import logger from "../libs/logger";
 import ApiError from "../error/apiError";
-import { sendingPosts, sendPost } from "../libs/sendingPosts";
+import { sendPost, sendingPosts } from "../libs/sendingPosts";
 
 class BotControllers {
   messagesToBot(bot: TelegramBot) {
@@ -22,7 +22,7 @@ class BotControllers {
 
         switch (message) {
           case "/start":
-            bot.sendMessage(chatId, MESSAGES.HELLO_MESSAGE, {
+            bot.sendMessage(chatId, getHelloMessage(), {
               disable_web_page_preview: true,
             });
             await addNewUser(userId);
@@ -53,7 +53,6 @@ class BotControllers {
           "Error when the bot responds to user messages",
           new ApiError(e.status, e.message),
         );
-        throw new ApiError(e.status, e.message);
       }
     });
   }
@@ -64,7 +63,7 @@ class BotControllers {
       await sendingPosts(bot);
     });
     job.start();
-    logger.info("Bot has started a daily mailing");
+    logger.info(`Bot has started mailing on schedule: ${timeCrone}`);
   }
 }
 

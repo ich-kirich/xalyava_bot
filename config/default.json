@@ -1,12 +1,22 @@
 {
   "db": {
-    "database": "iicexkxg",
-    "username": "iicexkxg",
-    "host": "abul.db.elephantsql.com",
+    "database": "example",
+    "username": "example",
+    "host": "example.com",
     "port": "5432",
-    "dialect": "postgres"
+    "dialect": "postgres",
+    "retryAttempts": 10,
+    "retryDelayMs": 3000
+  },
+  "http": {
+    "port": 3001
+  },
+  "telegram": {
+    "webhookUrl": "",
+    "webhookSecret": "",
+    "apiKey": ""
   },
   "sendPost": {
-    "timeCrone": "* * * * *"
+    "timeCrone": "0 12 * * *"
   }
 }

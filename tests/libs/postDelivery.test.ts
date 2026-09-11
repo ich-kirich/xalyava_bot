@@ -1,31 +1,28 @@
 import TelegramBot from "node-telegram-bot-api";
-import { getUsersForMailing, updateTodayPost } from "../services/botServices";
-import getPostsFromWebsite from "./getPostsFromWebsite";
-import { postDelivery } from "./postDelivery";
-import { sendPost, sendSorryMessage } from "./sendingPosts";
+import { getUsersForMailing, updateTodayPost } from "../../src/services/botServices";
+import { getPostsFromWebsite } from "../../src/libs/parsingSite";
+import { sendingPosts } from "../../src/libs/sendingPosts";
 
-jest.mock("./parsingSite");
-jest.mock("./getPostsFromWebsite");
-jest.mock("./sendingPosts");
-jest.mock("../services/botServices");
+jest.mock("../../src/libs/parsingSite");
+jest.mock("../../src/services/botServices");
 
-beforeEach(() => {
-  (getPostsFromWebsite as jest.Mock).mockClear();
-  (getUsersForMailing as jest.Mock).mockClear();
-});
+describe("sendingPosts mailing", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-describe("postDelivery", () => {
   test("should send a sorry message if there are no posts", async () => {
     const bot = {
       sendMediaGroup: jest.fn(),
       sendMessage: jest.fn(),
     } as unknown as TelegramBot;
-    (getPostsFromWebsite as jest.Mock).mockReturnValue([]);
-    (getUsersForMailing as jest.Mock).mockReturnValue([1, 2, 3]);
-    await postDelivery(bot);
+    (getPostsFromWebsite as jest.Mock).mockResolvedValue([]);
+    (getUsersForMailing as jest.Mock).mockResolvedValue([1, 2, 3]);
+    await sendingPosts(bot);
     expect(getPostsFromWebsite).toHaveBeenCalledTimes(1);
     expect(getUsersForMailing).toHaveBeenCalledTimes(1);
-    expect(sendSorryMessage).toHaveBeenCalledWith(bot, [1, 2, 3]);
+    expect(updateTodayPost).not.toHaveBeenCalled();
+    expect(bot.sendMessage).toHaveBeenCalledTimes(3);
   });
 
   test("should send posts if there are posts", async () => {
@@ -45,8 +42,9 @@ describe("postDelivery", () => {
         imagesArray: ["images"],
       },
     ];
-    (getPostsFromWebsite as jest.Mock).mockReturnValue(posts);
-    await postDelivery(bot);
+    (getPostsFromWebsite as jest.Mock).mockResolvedValue(posts);
+    (getUsersForMailing as jest.Mock).mockResolvedValue([1, 2, 3]);
+    await sendingPosts(bot);
     expect(getPostsFromWebsite).toHaveBeenCalledTimes(1);
     expect(getUsersForMailing).toHaveBeenCalledTimes(1);
     expect(updateTodayPost).toHaveBeenCalledWith({
@@ -54,6 +52,6 @@ describe("postDelivery", () => {
       postText: "text",
       imagesArray: ["images"],
     });
-    expect(sendPost).toHaveBeenCalledTimes(posts.length);
+    expect(bot.sendMediaGroup).toHaveBeenCalledTimes(posts.length * 3);
   });
 });

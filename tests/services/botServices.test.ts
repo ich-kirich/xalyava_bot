@@ -1,6 +1,6 @@
-import Post from "../models/post";
-import logger from "../libs/logger";
-import User from "../models/user";
+import Post from "../../src/models/post";
+import logger from "../../src/libs/logger";
+import User from "../../src/models/user";
 import {
   addNewUser,
   getTodayPost,
@@ -8,12 +8,12 @@ import {
   startMailing,
   updatePosts,
   updateTodayPost,
-} from "./botServices";
-import TodayPost from "../models/todayPost";
+} from "../../src/services/botServices";
+import TodayPost from "../../src/models/todayPost";
 
-jest.mock("../models/user");
-jest.mock("../models/post");
-jest.mock("../models/todayPost");
+jest.mock("../../src/models/user");
+jest.mock("../../src/models/post");
+jest.mock("../../src/models/todayPost");
 
 describe("addNewUser", () => {
   const userId = 1;
@@ -303,6 +303,13 @@ describe("getTodayPost", () => {
     expect(TodayPost.findAll).toHaveBeenCalledTimes(1);
     expect(result).toEqual([todayPost]);
     expect(loggerSpyInfo).toHaveBeenCalledWith("Today's post was received");
+    expect(loggerSpyError).not.toHaveBeenCalled();
+  });
+
+  test("should return an empty array if there is no today post", async () => {
+    (TodayPost.findAll as jest.Mock).mockResolvedValueOnce([]);
+    const result = await getTodayPost();
+    expect(result).toEqual([]);
     expect(loggerSpyError).not.toHaveBeenCalled();
   });
 

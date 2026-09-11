@@ -1,17 +1,13 @@
-FROM node:14
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+
+COPY package.json package-lock.json tsconfig.json ./
+COPY config ./config
+COPY src ./src
+
+RUN npm install && npx tsc
 
 EXPOSE 3001
 
-# Use latest version of npm
-RUN npm i npm@latest -g
-
-COPY package.json tsconfig.json package-lock.json* ./
-COPY src ./src
-
-RUN npm install --no-optional && npm cache clean --force
-
-# copy in our source code last, as it changes the most
-WORKDIR /opt
-COPY . .
-
-CMD npm start
+CMD ["node", "dist/index.js"]

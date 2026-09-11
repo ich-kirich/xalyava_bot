@@ -1,5 +1,6 @@
+import { BotCommand } from "node-telegram-bot-api";
+
 export enum MESSAGES {
-  HELLO_MESSAGE = "Добро пожаловать в 'Халява Бот'! \nЯ делаю рассылку постов с раздачей всякий преколямб с этого сайта:\nhttps://pikabu.ru/community/steam\nКак только там появился пост - я отправляю его тебе😘\nВот команды, которые тебе пригодятся:\n/startxalyava - начать рассылку постов\n/stopxalyava - прекратить рассылку постов\nВсё просто как два пальца об асфальт😎",
   START_MAILING = "Ты успешно начал рассылку😎",
   STOP_MAILING = "Ты прекратил рассылку халявы😥\nКак только передумаешь ты знаешь, где меня найти😉",
   UNKNOWN_MEASSAGE = "Это незнакомая мне команда😕, попробуй другие🙂",
@@ -9,3 +10,33 @@ export enum MESSAGES {
 }
 
 export const linkSite = "https://pikabu.ru/community/steam";
+
+export function getHelloMessage(): string {
+  return (
+    "Добро пожаловать в 'Халява Бот'! \n" +
+    "Я делаю рассылку постов с раздачей всякий преколямб с этого сайта:\n" +
+    `${linkSite}\n` +
+    "Как только там появился пост - я отправляю его тебе😘\n" +
+    "Вот команды, которые тебе пригодятся:\n" +
+    "/startxalyava - начать рассылку постов\n" +
+    "/stopxalyava - прекратить рассылку постов\n" +
+    "Всё просто как два пальца об асфальт😎"
+  );
+}
+
+export function getBotCommands(): BotCommand[] {
+  return [
+    {
+      command: "start",
+      description: "Приветствие и список команд",
+    },
+    {
+      command: "startxalyava",
+      description: "Начать рассылку",
+    },
+    {
+      command: "stopxalyava",
+      description: "Остановить рассылку",
+    },
+  ];
+}

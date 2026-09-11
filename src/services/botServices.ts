@@ -117,7 +117,6 @@ export async function getTodayPost() {
   try {
     const allPosts = await TodayPost.findAll();
     logger.info("Today's post was received");
-    console.log(allPosts[0].dataValues);
     return allPosts;
   } catch (e) {
     logger.error(
