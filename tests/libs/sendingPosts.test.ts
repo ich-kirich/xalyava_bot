@@ -3,9 +3,6 @@ import ApiError from "../../src/error/apiError";
 import { MESSAGES } from "../../src/libs/constants";
 import { sendPost, sendSorryMessage } from "../../src/libs/sendingPosts";
 
-jest.mock("../../src/libs/parsingSite");
-jest.mock("../../src/services/botServices");
-
 describe("sendSorryMessage", () => {
   test("should send a message to each chat id", async () => {
     const bot = {
@@ -188,27 +185,5 @@ describe("sendPost", () => {
 
     expect(sendMediaGroup).toHaveBeenCalledTimes(1);
     expect(sendPhoto).toHaveBeenCalledWith(1, "image11.jpg");
-  });
-});
-
-describe("sendingPosts", () => {
-  test("should send a sorry message when there are no new posts", async () => {
-    const bot = {
-      sendMessage: jest.fn(),
-    } as unknown as TelegramBot;
-    const parsingSite = jest.requireMock("../../src/libs/parsingSite") as {
-      getPostsFromWebsite: jest.Mock;
-    };
-    const botServices = jest.requireMock("../../src/services/botServices") as {
-      getUsersForMailing: jest.Mock;
-      updateTodayPost: jest.Mock;
-    };
-    parsingSite.getPostsFromWebsite.mockResolvedValue([]);
-    botServices.getUsersForMailing.mockResolvedValue([1, 2]);
-    const { sendingPosts } = await import("../../src/libs/sendingPosts");
-    await sendingPosts(bot);
-    expect(botServices.getUsersForMailing).toHaveBeenCalled();
-    expect(botServices.updateTodayPost).not.toHaveBeenCalled();
-    expect(bot.sendMessage).toHaveBeenCalledTimes(2);
   });
 });

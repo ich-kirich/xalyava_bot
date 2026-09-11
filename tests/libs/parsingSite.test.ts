@@ -9,137 +9,123 @@ import {
   getPosts,
 } from "../../src/libs/parsingSite";
 
-let index = 0;
-
-const text = jest.fn(() => {
-  return "Post Title";
-});
-
-const remove = jest.fn();
-
-const html = jest.fn(() => {
-  return '<div class="block">PostBlock</div>';
-});
-
-const attr = jest.fn().mockImplementation((source: string) => {
-  if (source == "data-source") {
-    index++;
-    return index % 2 ? "video1" : "video2";
-  }
-  if (source == "data-story-id") {
-    index++;
-    return index % 2 ? 1 : 2;
-  }
-  if (source == "data-src") {
-    index++;
-    return index % 2
-      ? "https://example.com/image1.jpg"
-      : "https://example.com/image2.jpg";
-  }
-  if (source === "href") {
-    return "https://example.com/post";
-  }
-});
-
-const each = jest.fn().mockImplementation((callback) => {
-  callback();
-  callback();
-});
-
-const toArray = jest.fn(() => [1, 2]);
-
-const loadCheerio = jest.fn().mockImplementation(() => {
-  return {
-    attr,
-    each,
-    toArray,
-    remove,
-    text,
-    html,
-  };
-});
-
-(loadCheerio as any).html = jest.fn(() => {
-  return '<div class="story__content"></div>';
-});
-
-jest.mock("axios");
 jest.mock("../../src/services/botServices");
-jest.mock("../../src/libs/storyFilter", () => ({
-  isRealStory: jest.fn(() => true),
-}));
 
-jest.mock("cheerio", () => {
-  return {
-    load: jest.fn().mockImplementation(() => loadCheerio),
-  };
-});
+function story(
+  id: number,
+  inner = `<p>Content ${id}</p>`,
+): string {
+  return `
+    <article class="story" data-story-id="${id}">
+      <a class="story__title-link" href="https://example.com/${id}">
+        Post ${id}
+      </a>
+      <div class="story__content-inner">${inner}</div>
+    </article>
+  `;
+}
+
+const advertisement = `
+  <article class="story" data-story-id="999">
+    <div class="story__main story__placeholder">
+      <div id="adfox_d_feed_all_1_1_1"></div>
+    </div>
+  </article>
+`;
 
 describe("getLinksVideos", () => {
-  test("should return video links from HTML", () => {
-    const fakeHtml =
-      '<div class="player" data-source="video1"></div><div class="player" data-source="video2"></div>';
-    const videoLinks = getLinksVideos(fakeHtml);
-    expect(videoLinks).toEqual(["video1", "video2"]);
+  test("reads data-source from .player and escapes markdown underscores", () => {
+    const html = `
+      <div class="player" data-source="https://cdn.example.com/video_1.mp4"></div>
+      <div class="player" data-source="video2"></div>
+      <div class="player"></div>
+    `;
+
+    expect(getLinksVideos(html)).toEqual([
+      "https://cdn.example.com/video\\_1.mp4",
+      "video2",
+    ]);
   });
 });
 
 describe("getPosts", () => {
-  test("should return an array of posts", async () => {
-    const html =
-      '<div class="story" data-story-id="1"></div><div class="story" data-story-id="2"></div>';
-    (updatePosts as jest.Mock).mockReturnValue([1, 2]);
-    const posts = await getPosts(html);
-    expect(posts[0]).toEqual({
-      postId: 1,
-      postBlock: '<div class="block">PostBlock</div>',
-      postContent: '<div class="block">PostBlock</div>',
-      linksVideos: ["video2", "video1"],
-    });
-    expect(posts[1]).toEqual({
-      postId: 2,
-      postBlock: '<div class="block">PostBlock</div>',
-      postContent: '<div class="block">PostBlock</div>',
-      linksVideos: ["video1", "video2"],
-    });
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  test("should return an empty array if there are no new posts", async () => {
-    const html =
-      '<div class="story" data-story-id="1"></div><div class="story" data-story-id="2"></div>';
-    (updatePosts as jest.Mock).mockReturnValue([]);
-    const result = await getPosts(html);
+  test("extracts content-inner, videos and skips ads and already stored posts", async () => {
+    const html = [
+      advertisement,
+      story(
+        1,
+        `
+          <p>Giveaway 1</p>
+          <div class="player" data-source="video1"></div>
+        `,
+      ),
+      story(2, "<p>Giveaway 2</p>"),
+    ].join("");
+    (updatePosts as jest.Mock).mockResolvedValue([1]);
+
+    const posts = await getPosts(html);
+
+    expect(updatePosts).toHaveBeenCalledWith([1, 2]);
+    expect(posts).toHaveLength(1);
+    expect(posts[0].postId).toBe(1);
+    expect(posts[0].postBlock).toContain("story__title-link");
+    expect(posts[0].postContent).toContain("Giveaway 1");
+    expect(posts[0].postContent).toContain('data-source="video1"');
+    expect(posts[0].postContent).not.toContain("story__title-link");
+    expect(posts[0].linksVideos).toEqual(["video1"]);
+  });
+
+  test("returns an empty array if there are no new posts", async () => {
+    (updatePosts as jest.Mock).mockResolvedValue([]);
+
+    const result = await getPosts(story(1) + story(2));
+
     expect(result).toHaveLength(0);
   });
 });
 
 describe("extractImages", () => {
-  test("should return an array of image URLs", () => {
-    const html =
-      '<div class="story-image__image" data-src="https://example.com/image1.jpg"></div><div class="story-image__image" data-src="https://example.com/image2.jpg"></div>';
-    const images = extractImages(html);
-    expect(images).toHaveLength(2);
-    expect(images[0]).toBe("https://example.com/image1.jpg");
-    expect(images[1]).toBe("https://example.com/image2.jpg");
+  test("reads data-src from story images and ignores nodes without it", () => {
+    const html = `
+      <div class="story-image__image" data-src="https://example.com/image1.jpg"></div>
+      <div class="story-image__image"></div>
+      <div class="story-image__image" data-src="https://example.com/image2.jpg"></div>
+    `;
+
+    expect(extractImages(html)).toEqual([
+      "https://example.com/image1.jpg",
+      "https://example.com/image2.jpg",
+    ]);
   });
 });
 
 describe("deleteImages", () => {
-  test("should remove .story-image__image elements from HTML", () => {
-    const html =
-      '<div class="story-image__image"></div><div class="story__content"></div>';
+  test("removes .story-image__image and keeps the rest of the markup", () => {
+    const html = `
+      <div class="story__content-inner">
+        <div class="story-image__image" data-src="https://example.com/image1.jpg"></div>
+        <p>Keep me</p>
+      </div>
+    `;
+
     const result = deleteImages(html);
-    expect(result).toEqual('<div class="story__content"></div>');
+
+    expect(result).not.toContain("story-image__image");
+    expect(result).toContain("Keep me");
+    expect(result).toContain("story__content-inner");
   });
 });
 
 describe("addNamePost", () => {
-  it("should add the post title to the beginning of the text", () => {
-    const markdownText = "This is the post content.";
+  test("prepends a markdown link from the title and strips special characters", () => {
     const html =
-      '<div class="story__title"><a class="story__title-link" href="https://example.com/post">Post Title</a></div>';
-    const result = addNamePost(markdownText, html);
-    expect(result).toEqual(
+      '<a class="story__title-link" href="https://example.com/post">Post Title!</a>';
+
+    expect(addNamePost("This is the post content.", html)).toEqual(
       "[Post Title](https://example.com/post)\n\nThis is the post content.",
     );
   });
@@ -147,78 +133,54 @@ describe("addNamePost", () => {
 
 describe("addVideoLinks", () => {
   test("should add video links to postText", () => {
-    const postText = "This is a post.";
-    const linksVideos = ["video1", "video2"];
-    const expectedResult = "This is a post.\n\nvideo1\nvideo2";
-    const result = addVideoLinks(postText, linksVideos);
-    expect(result).toEqual(expectedResult);
+    expect(addVideoLinks("This is a post.", ["video1", "video2"])).toEqual(
+      "This is a post.\n\nvideo1\nvideo2",
+    );
   });
 
   test("should handle an empty linksVideos array", () => {
-    const postText = "This is a post.";
-    const linksVideos: string[] = [];
-    const expectedResult = "This is a post.\n\n";
-    const result = addVideoLinks(postText, linksVideos);
-    expect(result).toEqual(expectedResult);
+    expect(addVideoLinks("This is a post.", [])).toEqual("This is a post.\n\n");
   });
 
   test("should handle an empty postText", () => {
-    const postText = "";
-    const linksVideos = ["video1", "video2"];
-    const expectedResult = "\n\nvideo1\nvideo2";
-    const result = addVideoLinks(postText, linksVideos);
-    expect(result).toEqual(expectedResult);
+    expect(addVideoLinks("", ["video1", "video2"])).toEqual("\n\nvideo1\nvideo2");
   });
 
   test("should handle both empty postText and linksVideos", () => {
-    const postText = "";
-    const linksVideos: string[] = [];
-    const expectedResult = "\n\n";
-    const result = addVideoLinks(postText, linksVideos);
-    expect(result).toEqual(expectedResult);
+    expect(addVideoLinks("", [])).toEqual("\n\n");
   });
 });
 
 describe("fixMarkdown", () => {
   test("should remove bold formatting", () => {
-    const inputText = "This is **bold** text.";
-    const expectedOutput = "This is bold text.";
-    const result = fixMarkdown(inputText);
-    expect(result).toEqual(expectedOutput);
+    expect(fixMarkdown("This is **bold** text.")).toEqual("This is bold text.");
   });
 
   test("should escape Markdown asterisks", () => {
-    const inputText = "This *is* some *text*.";
-    const expectedOutput = "This \\*is\\* some \\*text\\*.";
-    const result = fixMarkdown(inputText);
-    expect(result).toEqual(expectedOutput);
+    expect(fixMarkdown("This *is* some *text*.")).toEqual(
+      "This \\*is\\* some \\*text\\*.",
+    );
   });
 
   test("should remove escaped closing brackets", () => {
-    const inputText = "This is a \\] bracket.";
-    const expectedOutput = "This is a ] bracket.";
-    const result = fixMarkdown(inputText);
-    expect(result).toEqual(expectedOutput);
+    expect(fixMarkdown("This is a \\] bracket.")).toEqual(
+      "This is a ] bracket.",
+    );
   });
 
   test("should add spaces to Markdown links", () => {
-    const inputText = "[link1](url1)[link2](url2)";
-    const expectedOutput = " [link1](url1)  [link2](url2) ";
-    const result = fixMarkdown(inputText);
-    expect(result).toEqual(expectedOutput);
+    expect(fixMarkdown("[link1](url1)[link2](url2)")).toEqual(
+      " [link1](url1)  [link2](url2) ",
+    );
   });
 
   test("should handle an empty input string", () => {
-    const inputText = "";
-    const expectedOutput = "";
-    const result = fixMarkdown(inputText);
-    expect(result).toEqual(expectedOutput);
+    expect(fixMarkdown("")).toEqual("");
   });
 
   test("should handle a string without Markdown formatting", () => {
-    const inputText = "This is a plain text.";
-    const expectedOutput = "This is a plain text.";
-    const result = fixMarkdown(inputText);
-    expect(result).toEqual(expectedOutput);
+    expect(fixMarkdown("This is a plain text.")).toEqual(
+      "This is a plain text.",
+    );
   });
 });
