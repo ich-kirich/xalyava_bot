@@ -6,7 +6,15 @@ import logger from "./libs/logger";
 import ApiError from "./error/apiError";
 import { createHttpServer } from "./http/createHttpServer";
 import { createRuntime } from "./http/runtime";
-import { getBotCommands } from "./libs/constants";
+import {
+  getBotCommands,
+  getBotDescription,
+  getBotShortDescription,
+} from "./libs/constants";
+import {
+  setBotDescription,
+  setBotShortDescription,
+} from "./libs/botProfile";
 
 const optionalConfig = (key: string): string =>
   config.has(key) ? String(config.get(key)) : "";
@@ -47,7 +55,9 @@ const startBot = async () => {
     BotControllers.messagesToBot(bot);
     BotControllers.sendPosts(bot);
     await bot.setMyCommands(getBotCommands());
-    logger.info("Telegram command descriptions are set");
+    await setBotDescription(getBotDescription());
+    await setBotShortDescription(getBotShortDescription());
+    logger.info("Telegram command and bot descriptions are set");
     runtime.bot = bot;
     runtime.ready = true;
     logger.info("The bot is up and running");

@@ -19,5 +19,10 @@
   },
   "sendPost": {
     "timeCrone": "TIME_CRONE"
+  },
+  "sleep": {
+    "start": "SLEEP_START",
+    "end": "SLEEP_END",
+    "timezone": "SLEEP_TZ"
   }
 }
