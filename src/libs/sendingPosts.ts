@@ -5,6 +5,7 @@ import { getUsersForMailing, updateTodayPost } from "../services/botServices";
 import { linkSite, MESSAGES } from "./constants";
 import logger from "./logger";
 import { getPostsFromWebsite } from "./parsingSite";
+import { splitTelegramText } from "./utils";
 
 export async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   for (const chatId of chatsIds) {
@@ -23,6 +24,8 @@ export async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   }
 }
 
+export const TELEGRAM_ALBUM_LIMIT = 10;
+
 export async function sendPost(
   bot: TelegramBot,
   postContent: IPost,
@@ -33,14 +36,26 @@ export async function sendPost(
     type: "photo",
     media: imageUrl,
   }));
+  const albums: InputMediaPhoto[][] = [];
+  for (let i = 0; i < media.length; i += TELEGRAM_ALBUM_LIMIT) {
+    albums.push(media.slice(i, i + TELEGRAM_ALBUM_LIMIT));
+  }
 
   for (const chatId of chatsIds) {
     try {
-      await bot.sendMediaGroup(chatId, media);
-      await bot.sendMessage(chatId, postText, {
-        disable_web_page_preview: true,
-        parse_mode: "Markdown",
-      });
+      for (const album of albums) {
+        if (album.length === 1) {
+          await bot.sendPhoto(chatId, album[0].media as string);
+        } else {
+          await bot.sendMediaGroup(chatId, album);
+        }
+      }
+      for (const chunk of splitTelegramText(postText)) {
+        await bot.sendMessage(chatId, chunk, {
+          disable_web_page_preview: true,
+          parse_mode: "Markdown",
+        });
+      }
       logger.info(`Bot sent a post to the user with this id: ${chatId}`);
     } catch (e) {
       logger.error(
@@ -61,7 +76,14 @@ export async function sendingPosts(bot: TelegramBot) {
     return;
   }
 
-  await updateTodayPost(postsContent[0]);
+  try {
+    await updateTodayPost(postsContent[0]);
+  } catch (e) {
+    logger.error(
+      "Today post was not saved, mailing continues",
+      new ApiError(e.status, e.message),
+    );
+  }
   for (const postContent of postsContent) {
     await sendPost(bot, postContent, chatsIds);
   }

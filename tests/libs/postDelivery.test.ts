@@ -34,12 +34,12 @@ describe("sendingPosts mailing", () => {
       {
         postId: 1,
         postText: "text",
-        imagesArray: ["images"],
+        imagesArray: ["image1", "image2"],
       },
       {
         postId: 2,
         postText: "text",
-        imagesArray: ["images"],
+        imagesArray: ["image1", "image2"],
       },
     ];
     (getPostsFromWebsite as jest.Mock).mockResolvedValue(posts);
@@ -50,8 +50,28 @@ describe("sendingPosts mailing", () => {
     expect(updateTodayPost).toHaveBeenCalledWith({
       postId: 1,
       postText: "text",
-      imagesArray: ["images"],
+      imagesArray: ["image1", "image2"],
     });
     expect(bot.sendMediaGroup).toHaveBeenCalledTimes(posts.length * 3);
+  });
+
+  test("should keep mailing if today post cannot be saved", async () => {
+    const bot = {
+      sendMediaGroup: jest.fn(),
+      sendMessage: jest.fn(),
+    } as unknown as TelegramBot;
+    const posts = [
+      {
+        postId: 1,
+        postText: "text",
+        imagesArray: ["image1", "image2"],
+      },
+    ];
+    (getPostsFromWebsite as jest.Mock).mockResolvedValue(posts);
+    (getUsersForMailing as jest.Mock).mockResolvedValue([1]);
+    (updateTodayPost as jest.Mock).mockRejectedValue(new Error("too long"));
+    await sendingPosts(bot);
+    expect(bot.sendMediaGroup).toHaveBeenCalledTimes(1);
+    expect(bot.sendMessage).toHaveBeenCalledTimes(1);
   });
 });

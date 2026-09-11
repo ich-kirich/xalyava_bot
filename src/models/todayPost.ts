@@ -23,7 +23,7 @@ TodayPost.init(
       allowNull: false,
     },
     postText: {
-      type: DataTypes.STRING(4096),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     postId: {

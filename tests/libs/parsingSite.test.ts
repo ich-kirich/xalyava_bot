@@ -46,13 +46,7 @@ const each = jest.fn().mockImplementation((callback) => {
   callback();
 });
 
-const toArray = jest.fn(() => {
-  return {
-    slice: () => {
-      return [1, 2];
-    },
-  };
-});
+const toArray = jest.fn(() => [1, 2]);
 
 const loadCheerio = jest.fn().mockImplementation(() => {
   return {
@@ -71,6 +65,9 @@ const loadCheerio = jest.fn().mockImplementation(() => {
 
 jest.mock("axios");
 jest.mock("../../src/services/botServices");
+jest.mock("../../src/libs/storyFilter", () => ({
+  isRealStory: jest.fn(() => true),
+}));
 
 jest.mock("cheerio", () => {
   return {

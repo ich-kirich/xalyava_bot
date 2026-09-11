@@ -10,6 +10,11 @@ export enum MESSAGES {
   NO_POST_DB = "В моей базе данных нет постов, пока халяву не дам😥"
 }
 
+export const TELEGRAM_MESSAGE_LIMIT = 4096;
+export const POSTS_LIMIT = 10;
+export const FETCH_ATTEMPTS = 3;
+export const FETCH_RETRY_DELAY_MS = 2000;
+
 export const linkSite = "https://pikabu.ru/community/steam";
 
 export function getHelloMessage(): string {
