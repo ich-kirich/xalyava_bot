@@ -1,9 +1,12 @@
 import { timingSafeEqual } from "crypto";
-import { Update } from "node-telegram-bot-api";
+import TelegramBot, { Update } from "node-telegram-bot-api";
 import logger from "../libs/logger";
+import { MailingJob } from "../libs/mailingJob";
+import { sendingPosts } from "../libs/sendingPosts";
 import { BotRuntime, waitUntilReady } from "./runtime";
 
 export const WEBHOOK_READY_WAIT_MS = 50000;
+export const CRON_READY_WAIT_MS = 20000;
 
 export type RouterRequest = {
   method: string;
@@ -21,7 +24,11 @@ export type RouterResponse = {
 export type RouterDeps = {
   runtime: BotRuntime;
   webhookSecret: string;
+  cronSecret: string;
   readyWaitMs?: number;
+  cronReadyWaitMs?: number;
+  mailingJob: MailingJob;
+  startMailing?: (bot: TelegramBot) => Promise<void>;
 };
 
 function json(status: number, payload: unknown): RouterResponse {
@@ -75,6 +82,35 @@ export async function dispatch(
 
   if (method === "GET" && pathname === "/health") {
     return json(200, { ok: true, ready: deps.runtime.ready });
+  }
+
+  if (
+    (method === "GET" || method === "POST") &&
+    pathname === "/cron/send"
+  ) {
+    if (
+      !secretsEqual(
+        headerValue(request.headers, "X-Cron-Secret"),
+        deps.cronSecret,
+      )
+    ) {
+      return json(401, { ok: false, error: "unauthorized" });
+    }
+    const ready = await waitUntilReady(
+      deps.runtime,
+      deps.cronReadyWaitMs ?? CRON_READY_WAIT_MS,
+    );
+    if (!ready || !deps.runtime.bot) {
+      return json(503, { ok: false, error: "not ready" });
+    }
+    const mailingJob = deps.mailingJob;
+    const startMailing = deps.startMailing ?? sendingPosts;
+    const bot = deps.runtime.bot;
+    const result = mailingJob.start(() => startMailing(bot));
+    if (result === "started") {
+      return json(202, { ok: true, status: result });
+    }
+    return json(200, { ok: true, status: result });
   }
 
   if (method === "POST" && pathname === "/telegram/webhook") {

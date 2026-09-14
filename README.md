@@ -10,4 +10,4 @@ This is a bot that performs the function of sending out giveaways of free access
 - npx sequelize-cli db:migrate - start the migration process
 ***
 ## Technology stack
-- NodeJS, Typescript, PostgeSQL, Sequalize ORM, Docker, Jest, Node Telegram Bot Api, Nodemon, Prettier, Eslint, Node Config, Axios, Cheerio, Node Cron, Winston, Iconv Lite, Html To Md
+- NodeJS, Typescript, PostgeSQL, Sequalize ORM, Docker, Jest, Node Telegram Bot Api, Nodemon, Prettier, Eslint, Node Config, Axios, Cheerio, Winston, Iconv Lite, Html To Md

@@ -6,6 +6,8 @@ import logger from "./libs/logger";
 import ApiError from "./error/apiError";
 import { createHttpServer } from "./http/createHttpServer";
 import { createRuntime } from "./http/runtime";
+import { createMailingJob } from "./libs/mailingJob";
+import { sendingPosts } from "./libs/sendingPosts";
 import {
   getBotCommands,
   getBotDescription,
@@ -23,11 +25,16 @@ const startBot = async () => {
   const runtime = createRuntime();
   const webhookUrl = optionalConfig("telegram.webhookUrl");
   const webhookSecret = optionalConfig("telegram.webhookSecret");
+  const cronSecret =
+    optionalConfig("sendPost.cronSecret") || webhookSecret;
   const httpPort = Number(config.get("http.port"));
 
   const server = createHttpServer({
     runtime,
     webhookSecret,
+    cronSecret,
+    mailingJob: createMailingJob(),
+    startMailing: sendingPosts,
   });
 
   await new Promise<void>((resolve) => {
@@ -53,7 +60,6 @@ const startBot = async () => {
     }
 
     BotControllers.messagesToBot(bot);
-    BotControllers.sendPosts(bot);
     await bot.setMyCommands(getBotCommands());
     await setBotDescription(getBotDescription());
     await setBotShortDescription(getBotShortDescription());

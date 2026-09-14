@@ -6,11 +6,9 @@ import {
   startMailing,
   stopMailing,
 } from "../services/botServices";
-import config from "config";
-import cron from "node-cron";
 import logger from "../libs/logger";
 import ApiError from "../error/apiError";
-import { sendPost, sendingPosts } from "../libs/sendingPosts";
+import { sendPost } from "../libs/sendingPosts";
 
 class BotControllers {
   messagesToBot(bot: TelegramBot) {
@@ -55,15 +53,6 @@ class BotControllers {
         );
       }
     });
-  }
-
-  sendPosts(bot: TelegramBot) {
-    const timeCrone: string = config.get("sendPost.timeCrone");
-    const job = cron.schedule(timeCrone, async () => {
-      await sendingPosts(bot);
-    });
-    job.start();
-    logger.info(`Bot has started mailing on schedule: ${timeCrone}`);
   }
 }
 

@@ -17,11 +17,6 @@
     "apiKey": ""
   },
   "sendPost": {
-    "timeCrone": "0 12 * * *"
-  },
-  "sleep": {
-    "start": "00:00",
-    "end": "08:00",
-    "timezone": "Europe/Moscow"
+    "cronSecret": ""
   }
 }

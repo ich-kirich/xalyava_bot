@@ -1,5 +1,4 @@
 import { BotCommand } from "node-telegram-bot-api";
-import { getSleepDelayHint } from "./sleepWindow";
 
 export enum MESSAGES {
   START_MAILING = "Ты успешно начал рассылку😎",
@@ -26,32 +25,27 @@ export function getHelloMessage(): string {
     "Вот команды, которые тебе пригодятся:\n" +
     "/startxalyava - начать рассылку постов\n" +
     "/stopxalyava - прекратить рассылку постов\n" +
-    `${getSleepDelayHint()}\n` +
     "Всё просто как два пальца об асфальт😎"
   );
 }
 
 export function getBotDescription(): string {
-  return (
-    "Рассылка халявы с Pikabu Steam. " +
-    `${getSleepDelayHint()}.`
-  );
+  return "Рассылка халявы с Pikabu Steam.";
 }
 
 export function getBotShortDescription(): string {
-  return getSleepDelayHint();
+  return "Рассылка халявы с Pikabu Steam";
 }
 
 export function getBotCommands(): BotCommand[] {
-  const hint = getSleepDelayHint();
   return [
     {
       command: "startxalyava",
-      description: `Начать рассылку. ${hint}`,
+      description: "Начать рассылку постов",
     },
     {
       command: "stopxalyava",
-      description: `Остановить рассылку. ${hint}`,
+      description: "Остановить рассылку постов",
     },
   ];
 }
