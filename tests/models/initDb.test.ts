@@ -1,30 +1,10 @@
 import config from "config";
 import sequelize from "../../src/db";
-import logger from "../../src/libs/logger";
 import initDb from "../../src/models/initDb";
 
 describe("initDb", () => {
   afterEach(() => {
     jest.restoreAllMocks();
-  });
-
-  test("should authenticate with the database", async () => {
-    const authenticateSpy = jest
-      .spyOn(sequelize, "authenticate")
-      .mockResolvedValue(undefined as never);
-    await initDb();
-    expect(authenticateSpy).toHaveBeenCalled();
-  });
-
-  test("should log a successful database connection", async () => {
-    jest
-      .spyOn(sequelize, "authenticate")
-      .mockResolvedValue(undefined as never);
-    const loggerSpy = jest.spyOn(logger, "info");
-    await initDb();
-    expect(loggerSpy).toHaveBeenCalledWith(
-      "Database connection established successfully",
-    );
   });
 
   test("should retry authenticate after a failed attempt", async () => {

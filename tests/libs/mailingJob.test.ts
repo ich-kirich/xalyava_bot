@@ -39,4 +39,23 @@ describe("createMailingJob", () => {
     expect(job.status()).toBe("idle");
     expect(job.start(run)).toBe("started");
   });
+
+  test("allows another start after the Moscow calendar day changes", async () => {
+    let now = new Date("2026-09-14T23:30:00+03:00");
+    const job = createMailingJob({
+      timeZone: "Europe/Moscow",
+      now: () => now,
+    });
+    const run = jest.fn().mockResolvedValue(undefined);
+
+    expect(job.start(run)).toBe("started");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(job.status()).toBe("already_sent");
+
+    now = new Date("2026-09-15T00:01:00+03:00");
+    expect(job.status()).toBe("idle");
+    expect(job.start(run)).toBe("started");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(run).toHaveBeenCalledTimes(2);
+  });
 });

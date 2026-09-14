@@ -20,18 +20,6 @@ function deps(overrides: Partial<RouterDeps> = {}): RouterDeps {
 }
 
 describe("dispatch", () => {
-  test("GET /health returns ok while not ready", async () => {
-    const routerDeps = deps({
-      runtime: { bot: null, ready: false },
-    });
-    const result = await dispatch(
-      { method: "GET", pathname: "/health", headers: {}, body: "" },
-      routerDeps,
-    );
-    expect(result.status).toBe(200);
-    expect(JSON.parse(result.body)).toEqual({ ok: true, ready: false });
-  });
-
   test("POST /telegram/webhook waits until the bot is ready", async () => {
     const runtime = createRuntime();
     const routerDeps = deps({

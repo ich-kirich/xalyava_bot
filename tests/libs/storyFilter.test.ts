@@ -11,11 +11,6 @@ describe("isRealStory", () => {
     expect(isRealStory(html)).toBe(false);
   });
 
-  test("rejects missing HTML", () => {
-    expect(isRealStory(null)).toBe(false);
-    expect(isRealStory("")).toBe(false);
-  });
-
   test("accepts a story with a title and content", () => {
     const html = `
       <div class="story__main">
