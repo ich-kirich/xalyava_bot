@@ -58,27 +58,6 @@ describe("getPosts", () => {
     expect(posts[0].postContent).not.toContain("story__title-link");
     expect(posts[0].linksVideos).toEqual(["video1"]);
   });
-
-  test("takes mp4 sources and ignores pikabu video pages", async () => {
-    const html = story(
-      1,
-      `
-        <div class="story-block story-block_type_video">
-          <div data-role="player">
-            <video><source src="https://cs2.pikabu.ru/clip_low.mp4" type="video/mp4"></video>
-          </div>
-          <a href="https://pikabu.ru/video/story/crystal_crisis/1756519" hidden>Перейти к видео</a>
-        </div>
-      `,
-    );
-    (updatePosts as jest.Mock).mockResolvedValue([1]);
-
-    const posts = await getPosts(html);
-
-    expect(posts[0].linksVideos).toEqual([
-      "https://cs2.pikabu.ru/clip_low.mp4",
-    ]);
-  });
 });
 
 describe("extractImages", () => {

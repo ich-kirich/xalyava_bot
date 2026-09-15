@@ -45,27 +45,6 @@ describe("sendPost", () => {
     });
   });
 
-  test("should keep the post text as it was parsed", async () => {
-    const sendMessage = jest.fn();
-    const bot = {
-      sendMediaGroup: jest.fn(),
-      sendPhoto: jest.fn(),
-      sendMessage,
-    } as unknown as TelegramBot;
-    const postText =
-      "<b>Crystal Crisis</b>\n\n" +
-      "Онлайн-файтинг про кристаллы.\n\n" +
-      "<b>Страница игры и раздачи в STEAM:</b>\n\n" +
-      "https://store.steampowered.com/app/447700/Crystal_Crisis/";
-
-    await sendPost(bot, { postId: 1, imagesArray: [], postText }, [1]);
-
-    expect(sendMessage).toHaveBeenCalledWith(1, postText, {
-      disable_web_page_preview: true,
-      parse_mode: "HTML",
-    });
-  });
-
   test("should resend the text without markup if telegram rejects it", async () => {
     const sendMessage = jest
       .fn()

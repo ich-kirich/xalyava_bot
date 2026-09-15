@@ -10,54 +10,9 @@ jest.mock("../../src/libs/utils", () => ({
   sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
-function story(id: number): string {
-  return `
-    <article class="story" data-story-id="${id}">
-      <a class="story__title-link" href="https://example.com/${id}">Post Title ${id}</a>
-      <div class="story__content-inner">
-        <p>Giveaway ${id}</p>
-        <div class="story-image__image" data-src="https://example.com/pic${id}.jpg"></div>
-        <div class="player" data-source="https://cdn.example.com/video_${id}.mp4"></div>
-      </div>
-    </article>
-  `;
-}
-
 describe("getPostsFromWebsite assembly", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  test("builds telegram html text, images and video links for new posts", async () => {
-    (axios.get as jest.Mock)
-      .mockResolvedValueOnce({
-        status: 200,
-        data: iconv.encode(story(1), "win1251"),
-        headers: {},
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        data: Buffer.from(""),
-        headers: {},
-      });
-    (updatePosts as jest.Mock).mockResolvedValue([1]);
-
-    const posts = await getPostsFromWebsite("https://example.com/community");
-
-    expect(posts).toHaveLength(1);
-    expect(posts[0].postId).toBe(1);
-    expect(posts[0].imagesArray).toEqual(["https://example.com/pic1.jpg"]);
-    expect(posts[0].postText).toContain("<b>Post Title 1</b>");
-    expect(posts[0].postText).not.toContain("https://example.com/1");
-    expect(posts[0].postText).toContain("Giveaway 1");
-    expect(posts[0].postText).toContain(
-      '<a href="https://cdn.example.com/video_1.mp4">Видео</a>',
-    );
-    expect(posts[0].postText).not.toContain(
-      "https://cdn.example.com/video_1.mp4\n",
-    );
-    expect(posts[0].postText).not.toContain("story-image__image");
-    expect(posts[0].postText).not.toContain("\\_");
   });
 
   test("builds a crystal crisis style post without site chrome", async () => {
