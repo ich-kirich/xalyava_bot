@@ -1,6 +1,13 @@
 import { timingSafeEqual } from "crypto";
 import TelegramBot, { Update } from "node-telegram-bot-api";
 import logger from "../libs/logger";
+import {
+  parseBeforeId,
+  parseLogLevel,
+  parseLogLimit,
+  pruneAppLogs,
+  queryAppLogs,
+} from "../libs/appLogStore";
 import { MailingJob } from "../libs/mailingJob";
 import { sendingPosts } from "../libs/sendingPosts";
 import { BotRuntime, waitUntilReady } from "./runtime";
@@ -13,6 +20,7 @@ export type RouterRequest = {
   pathname: string;
   headers: Record<string, string | string[] | undefined>;
   body: string;
+  searchParams?: Record<string, string>;
 };
 
 export type RouterResponse = {
@@ -97,6 +105,11 @@ export async function dispatch(
     if (!ready || !deps.runtime.bot) {
       return json(503, { ok: false, error: "not ready" });
     }
+    try {
+      await pruneAppLogs();
+    } catch {
+      // Mailing still runs if old logs cannot be deleted.
+    }
     const { mailingJob } = deps;
     const startMailing = deps.startMailing ?? sendingPosts;
     const { bot } = deps.runtime;
@@ -132,6 +145,27 @@ export async function dispatch(
     }
     deps.runtime.bot.processUpdate(update);
     return json(200, { ok: true });
+  }
+
+  if (method === "GET" && pathname === "/logs") {
+    if (
+      !secretsEqual(
+        headerValue(request.headers, "X-Cron-Secret"),
+        deps.cronSecret,
+      )
+    ) {
+      return json(401, { ok: false, error: "unauthorized" });
+    }
+    try {
+      const page = await queryAppLogs({
+        limit: parseLogLimit(request.searchParams?.limit),
+        level: parseLogLevel(request.searchParams?.level),
+        beforeId: parseBeforeId(request.searchParams?.beforeId),
+      });
+      return json(200, page);
+    } catch {
+      return json(503, { ok: false, error: "not ready" });
+    }
   }
 
   return json(404, { ok: false, error: "not found" });

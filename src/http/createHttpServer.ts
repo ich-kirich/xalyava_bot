@@ -31,6 +31,7 @@ export function createHttpServer(deps: RouterDeps): http.Server {
         {
           method: req.method || "GET",
           pathname: url.pathname,
+          searchParams: Object.fromEntries(url.searchParams.entries()),
           headers: req.headers,
           body,
         },

@@ -13,6 +13,13 @@ export const TELEGRAM_MESSAGE_LIMIT = 4096;
 export const POSTS_LIMIT = 10;
 export const FETCH_ATTEMPTS = 3;
 export const FETCH_RETRY_DELAY_MS = 2000;
+export const LOG_RETENTION_DAYS = 90;
+export const LOG_LIST_DEFAULT = 50;
+export const LOG_LIST_MAX = 100;
+export const LOG_QUEUE_LIMIT = 100;
+export const LOG_MESSAGE_MAX = 4000;
+export const LOG_STACK_MAX = 1024;
+export const LOG_DEDUP_MS = 60_000;
 
 export const linkSite = "https://pikabu.ru/community/steam";
 

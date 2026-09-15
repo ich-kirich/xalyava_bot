@@ -14,6 +14,7 @@ import {
   getBotShortDescription,
 } from "./libs/constants";
 import { setBotDescription, setBotShortDescription } from "./libs/botProfile";
+import { enableAppLogPersistence, pruneAppLogs } from "./libs/appLogStore";
 
 const optionalConfig = (key: string): string =>
   config.has(key) ? String(config.get(key)) : "";
@@ -40,6 +41,8 @@ const startBot = async () => {
 
   try {
     await initDb();
+    await enableAppLogPersistence();
+    await pruneAppLogs();
     const useWebhook = Boolean(webhookUrl);
     const bot = new TelegramBot(config.get("telegram.apiKey"), {
       polling: !useWebhook,

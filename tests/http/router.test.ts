@@ -2,6 +2,16 @@ import TelegramBot from "node-telegram-bot-api";
 import { dispatch, RouterDeps } from "../../src/http/router";
 import { createRuntime } from "../../src/http/runtime";
 import { createMailingJob } from "../../src/libs/mailingJob";
+import { pruneAppLogs, queryAppLogs } from "../../src/libs/appLogStore";
+
+jest.mock("../../src/libs/appLogStore", () => {
+  const actual = jest.requireActual("../../src/libs/appLogStore");
+  return {
+    ...actual,
+    pruneAppLogs: jest.fn().mockResolvedValue(undefined),
+    queryAppLogs: jest.fn().mockResolvedValue({ items: [], nextCursor: null }),
+  };
+});
 
 function deps(overrides: Partial<RouterDeps> = {}): RouterDeps {
   const runtime = createRuntime();
@@ -20,6 +30,9 @@ function deps(overrides: Partial<RouterDeps> = {}): RouterDeps {
 }
 
 describe("dispatch", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   test("POST /telegram/webhook waits until the bot is ready", async () => {
     const runtime = createRuntime();
     const routerDeps = deps({
@@ -182,5 +195,77 @@ describe("dispatch", () => {
       status: "already_sent",
     });
     expect(startMailing).toHaveBeenCalledTimes(1);
+  });
+
+  test("GET /cron/send prunes old logs before mailing", async () => {
+    const startMailing = jest.fn().mockResolvedValue(undefined);
+    await dispatch(
+      {
+        method: "GET",
+        pathname: "/cron/send",
+        headers: { "X-Cron-Secret": "cron-secret" },
+        body: "",
+      },
+      deps({ startMailing }),
+    );
+    expect(pruneAppLogs).toHaveBeenCalledTimes(1);
+  });
+
+  test("GET /logs rejects a bad secret", async () => {
+    const result = await dispatch(
+      {
+        method: "GET",
+        pathname: "/logs",
+        headers: { "X-Cron-Secret": "wrong" },
+        body: "",
+      },
+      deps(),
+    );
+    expect(result.status).toBe(401);
+    expect(queryAppLogs).not.toHaveBeenCalled();
+  });
+
+  test("GET /logs returns a page for an admin screen", async () => {
+    const createdAt = new Date("2026-09-15T10:00:00.000Z");
+    (queryAppLogs as jest.Mock).mockResolvedValueOnce({
+      items: [
+        {
+          id: 3,
+          level: "error",
+          message: "boom",
+          meta: { status: 500 },
+          createdAt,
+        },
+      ],
+      nextCursor: null,
+    });
+    const result = await dispatch(
+      {
+        method: "GET",
+        pathname: "/logs",
+        headers: { "X-Cron-Secret": "cron-secret" },
+        body: "",
+        searchParams: { limit: "20", level: "error", beforeId: "40" },
+      },
+      deps(),
+    );
+    expect(result.status).toBe(200);
+    expect(queryAppLogs).toHaveBeenCalledWith({
+      limit: 20,
+      level: "error",
+      beforeId: 40,
+    });
+    expect(JSON.parse(result.body)).toEqual({
+      items: [
+        {
+          id: 3,
+          level: "error",
+          message: "boom",
+          meta: { status: 500 },
+          createdAt: createdAt.toISOString(),
+        },
+      ],
+      nextCursor: null,
+    });
   });
 });
