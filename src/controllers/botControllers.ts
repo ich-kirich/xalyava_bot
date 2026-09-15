@@ -25,7 +25,7 @@ class BotControllers {
             });
             await addNewUser(userId);
             break;
-          case "/startxalyava":
+          case "/startxalyava": {
             bot.sendMessage(chatId, MESSAGES.START_MAILING);
             const post = await getTodayPost();
             await startMailing(userId);
@@ -36,6 +36,7 @@ class BotControllers {
               bot.sendMessage(chatId, MESSAGES.NO_POST_DB);
             }
             break;
+          }
           case "/stopxalyava":
             bot.sendMessage(chatId, MESSAGES.STOP_MAILING);
             await stopMailing(userId);

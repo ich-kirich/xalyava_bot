@@ -2,10 +2,7 @@ import axios from "axios";
 import { updatePosts } from "../../src/services/botServices";
 import { FETCH_RETRY_DELAY_MS } from "../../src/libs/constants";
 import { sleep } from "../../src/libs/utils";
-import {
-  getPosts,
-  getPostsFromWebsite,
-} from "../../src/libs/parsingSite";
+import { getPosts, getPostsFromWebsite } from "../../src/libs/parsingSite";
 
 jest.mock("axios");
 jest.mock("../../src/services/botServices");
@@ -48,9 +45,7 @@ describe("getPosts selection", () => {
 
     await getPosts(html);
 
-    expect(updatePosts).toHaveBeenCalledWith([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-    ]);
+    expect(updatePosts).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   test("loads page 2 when page 1 has fewer than 10 real stories", async () => {
@@ -82,13 +77,13 @@ describe("getPosts selection", () => {
       "https://example.com/community?page=2",
       expect.any(Object),
     );
-    expect(updatePosts).toHaveBeenCalledWith([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-    ]);
+    expect(updatePosts).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   test("retries a blocked page and then loads stories", async () => {
-    const html = Array.from({ length: 10 }, (_, index) => story(index + 1)).join("");
+    const html = Array.from({ length: 10 }, (_, index) =>
+      story(index + 1),
+    ).join("");
     (axios.get as jest.Mock)
       .mockResolvedValueOnce({
         status: 403,
@@ -106,9 +101,7 @@ describe("getPosts selection", () => {
 
     expect(sleep).toHaveBeenCalledWith(FETCH_RETRY_DELAY_MS);
     expect(axios.get).toHaveBeenCalledTimes(2);
-    expect(updatePosts).toHaveBeenCalledWith([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-    ]);
+    expect(updatePosts).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   test("reuses DDoS-Guard cookies on the second page request", async () => {
@@ -141,9 +134,10 @@ describe("getPosts selection", () => {
   });
 
   test("accepts a normal page that merely references the ddos-guard script", async () => {
-    const html =
-      '<script src="/.well-known/ddos-guard/check.js"></script>' +
-      Array.from({ length: 10 }, (_, index) => story(index + 1)).join("");
+    const html = `<script src="/.well-known/ddos-guard/check.js"></script>${Array.from(
+      { length: 10 },
+      (_, index) => story(index + 1),
+    ).join("")}`;
     (axios.get as jest.Mock).mockResolvedValueOnce({
       status: 200,
       data: Buffer.from(html),
@@ -154,9 +148,7 @@ describe("getPosts selection", () => {
     await getPostsFromWebsite("https://example.com/community");
 
     expect(axios.get).toHaveBeenCalledTimes(1);
-    expect(updatePosts).toHaveBeenCalledWith([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-    ]);
+    expect(updatePosts).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   test("fails after three blocked attempts", async () => {

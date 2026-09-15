@@ -1,7 +1,7 @@
+import TelegramBot from "node-telegram-bot-api";
 import { dispatch, RouterDeps } from "../../src/http/router";
 import { createRuntime } from "../../src/http/runtime";
 import { createMailingJob } from "../../src/libs/mailingJob";
-import TelegramBot from "node-telegram-bot-api";
 
 function deps(overrides: Partial<RouterDeps> = {}): RouterDeps {
   const runtime = createRuntime();
@@ -142,7 +142,9 @@ describe("dispatch", () => {
     );
     expect(result.status).toBe(202);
     expect(JSON.parse(result.body)).toEqual({ ok: true, status: "started" });
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(startMailing).toHaveBeenCalledTimes(1);
 
     const running = await dispatch(
@@ -161,7 +163,9 @@ describe("dispatch", () => {
     });
 
     finish();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
 
     const sent = await dispatch(
       {

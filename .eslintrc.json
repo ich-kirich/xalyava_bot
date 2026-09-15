@@ -1,10 +1,12 @@
 {
+  "root": true,
   "env": {
-    "node": true
+    "node": true,
+    "jest": true
   },
   "extends": [
-    "airbnb",
-    "airbnb-typescript",
+    "airbnb-base",
+    "airbnb-typescript/base",
     "plugin:import/typescript",
     "plugin:prettier/recommended"
   ],
@@ -12,7 +14,7 @@
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.eslint.json"
   },
   "plugins": ["@typescript-eslint", "prettier"],
   "rules": {
@@ -23,6 +25,7 @@
     "@typescript-eslint/no-inferrable-types": "off",
     "@typescript-eslint/no-var-requires": "off",
     "import/no-named-as-default": 0,
+    "import/prefer-default-export": "off",
     "no-param-reassign": 0,
     "@typescript-eslint/naming-convention": "off",
     "import/no-extraneous-dependencies": ["error", { "devDependencies": true }],
@@ -30,6 +33,24 @@
     "no-await-in-loop": "off",
     "import/no-dynamic-require": "off",
     "global-require": "off",
-    "no-useless-return": "off"
-  }
+    "no-useless-return": "off",
+    "no-continue": "off",
+    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+    "no-void": ["error", { "allowAsStatement": true }],
+    "@typescript-eslint/no-use-before-define": ["error", { "functions": false }]
+  },
+  "overrides": [
+    {
+      "files": ["*.js"],
+      "parserOptions": {
+        "sourceType": "script"
+      }
+    },
+    {
+      "files": ["migrations/**/*.js", "config/*.js"],
+      "rules": {
+        "strict": "off"
+      }
+    }
+  ]
 }

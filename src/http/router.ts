@@ -46,10 +46,7 @@ function normalizePath(pathname: string): string {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
-function headerValue(
-  headers: RouterRequest["headers"],
-  name: string,
-): string {
+function headerValue(headers: RouterRequest["headers"], name: string): string {
   const target = name.toLowerCase();
   const entry = Object.entries(headers).find(
     ([key]) => key.toLowerCase() === target,
@@ -84,10 +81,7 @@ export async function dispatch(
     return json(200, { ok: true, ready: deps.runtime.ready });
   }
 
-  if (
-    (method === "GET" || method === "POST") &&
-    pathname === "/cron/send"
-  ) {
+  if ((method === "GET" || method === "POST") && pathname === "/cron/send") {
     if (
       !secretsEqual(
         headerValue(request.headers, "X-Cron-Secret"),
@@ -103,9 +97,9 @@ export async function dispatch(
     if (!ready || !deps.runtime.bot) {
       return json(503, { ok: false, error: "not ready" });
     }
-    const mailingJob = deps.mailingJob;
+    const { mailingJob } = deps;
     const startMailing = deps.startMailing ?? sendingPosts;
-    const bot = deps.runtime.bot;
+    const { bot } = deps.runtime;
     const result = mailingJob.start(() => startMailing(bot));
     if (result === "started") {
       return json(202, { ok: true, status: result });

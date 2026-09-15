@@ -1,5 +1,8 @@
 import TelegramBot from "node-telegram-bot-api";
-import { getUsersForMailing, updateTodayPost } from "../../src/services/botServices";
+import {
+  getUsersForMailing,
+  updateTodayPost,
+} from "../../src/services/botServices";
 import { getPostsFromWebsite } from "../../src/libs/parsingSite";
 import { sendingPosts } from "../../src/libs/sendingPosts";
 

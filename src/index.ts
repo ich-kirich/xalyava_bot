@@ -13,10 +13,7 @@ import {
   getBotDescription,
   getBotShortDescription,
 } from "./libs/constants";
-import {
-  setBotDescription,
-  setBotShortDescription,
-} from "./libs/botProfile";
+import { setBotDescription, setBotShortDescription } from "./libs/botProfile";
 
 const optionalConfig = (key: string): string =>
   config.has(key) ? String(config.get(key)) : "";
@@ -25,8 +22,7 @@ const startBot = async () => {
   const runtime = createRuntime();
   const webhookUrl = optionalConfig("telegram.webhookUrl");
   const webhookSecret = optionalConfig("telegram.webhookSecret");
-  const cronSecret =
-    optionalConfig("sendPost.cronSecret") || webhookSecret;
+  const cronSecret = optionalConfig("sendPost.cronSecret") || webhookSecret;
   const httpPort = Number(config.get("http.port"));
 
   const server = createHttpServer({

@@ -16,10 +16,14 @@ describe("createMailingJob", () => {
     );
 
     expect(job.start(run)).toBe("started");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(job.start(run)).toBe("already_running");
     finish();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(job.status()).toBe("already_sent");
     expect(job.start(run)).toBe("already_sent");
     expect(run).toHaveBeenCalledTimes(1);
@@ -35,7 +39,9 @@ describe("createMailingJob", () => {
       .mockResolvedValueOnce(undefined);
 
     expect(job.start(run)).toBe("started");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(job.status()).toBe("idle");
     expect(job.start(run)).toBe("started");
   });
@@ -49,13 +55,17 @@ describe("createMailingJob", () => {
     const run = jest.fn().mockResolvedValue(undefined);
 
     expect(job.start(run)).toBe("started");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(job.status()).toBe("already_sent");
 
     now = new Date("2026-09-15T00:01:00+03:00");
     expect(job.status()).toBe("idle");
     expect(job.start(run)).toBe("started");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(run).toHaveBeenCalledTimes(2);
   });
 });

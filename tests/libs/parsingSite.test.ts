@@ -1,12 +1,15 @@
 import { updatePosts } from "../../src/services/botServices";
-import { getPosts } from "../../src/libs/parsingSite";
+import {
+  addNamePost,
+  addVideoLinks,
+  extractImages,
+  getLinksVideos,
+  getPosts,
+} from "../../src/libs/parsingSite";
 
 jest.mock("../../src/services/botServices");
 
-function story(
-  id: number,
-  inner = `<p>Content ${id}</p>`,
-): string {
+function story(id: number, inner = `<p>Content ${id}</p>`): string {
   return `
     <article class="story" data-story-id="${id}">
       <a class="story__title-link" href="https://example.com/${id}">
@@ -54,5 +57,94 @@ describe("getPosts", () => {
     expect(posts[0].postContent).toContain('data-source="video1"');
     expect(posts[0].postContent).not.toContain("story__title-link");
     expect(posts[0].linksVideos).toEqual(["video1"]);
+  });
+
+  test("takes mp4 sources and ignores pikabu video pages", async () => {
+    const html = story(
+      1,
+      `
+        <div class="story-block story-block_type_video">
+          <div data-role="player">
+            <video><source src="https://cs2.pikabu.ru/clip_low.mp4" type="video/mp4"></video>
+          </div>
+          <a href="https://pikabu.ru/video/story/crystal_crisis/1756519" hidden>Перейти к видео</a>
+        </div>
+      `,
+    );
+    (updatePosts as jest.Mock).mockResolvedValue([1]);
+
+    const posts = await getPosts(html);
+
+    expect(posts[0].linksVideos).toEqual([
+      "https://cs2.pikabu.ru/clip_low.mp4",
+    ]);
+  });
+});
+
+describe("extractImages", () => {
+  test("collects story images and carousel slides without duplicates", () => {
+    const html = `
+      <div class="story-block story-block_type_image">
+        <img class="story-image__image" data-src="https://cs.pikabu.ru/cover.webp">
+      </div>
+      <div class="story-block story-block_type_carousel">
+        <article class="carousel__item"><img data-src="https://cs.pikabu.ru/slide1.jpg"></article>
+        <article class="carousel__item"><img data-src="https://cs.pikabu.ru/slide2.jpg"></article>
+        <article class="carousel__item"><img data-src="https://cs.pikabu.ru/cover.webp"></article>
+        <div class="carousel__cur-slide">1/5</div>
+      </div>
+    `;
+
+    expect(extractImages(html)).toEqual([
+      "https://cs.pikabu.ru/cover.webp",
+      "https://cs.pikabu.ru/slide1.jpg",
+      "https://cs.pikabu.ru/slide2.jpg",
+    ]);
+  });
+});
+
+describe("getLinksVideos", () => {
+  test("prefers player mp4 over hidden video page links", () => {
+    expect(
+      getLinksVideos(`
+        <div data-role="player">
+          <source src="https://cs17.pikabu.ru/game_low.mp4" type="video/mp4">
+        </div>
+        <a href="https://pikabu.ru/video/story/test/1">Перейти к видео</a>
+        <div class="player" data-source="https://cdn.example.com/legacy.mp4"></div>
+      `),
+    ).toEqual([
+      "https://cs17.pikabu.ru/game_low.mp4",
+      "https://cdn.example.com/legacy.mp4",
+    ]);
+  });
+});
+
+describe("addNamePost", () => {
+  test("puts a bold title without a pikabu link", () => {
+    const html = `
+      <a class="story__title-link" href="https://pikabu.ru/story/crystal_crisis">
+        Crystal Crisis — 100% скидка в STEAM!
+      </a>
+    `;
+
+    expect(addNamePost("Текст поста", html)).toBe(
+      "<b>Crystal Crisis — 100% скидка в STEAM!</b>\n\nТекст поста",
+    );
+  });
+});
+
+describe("addVideoLinks", () => {
+  test("appends numbered video labels instead of raw urls", () => {
+    expect(
+      addVideoLinks("Текст", [
+        "https://cs2.pikabu.ru/one.mp4",
+        "https://cs17.pikabu.ru/two.mp4",
+      ]),
+    ).toBe(
+      "Текст\n\n" +
+        '<a href="https://cs2.pikabu.ru/one.mp4">Видео 1</a>\n' +
+        '<a href="https://cs17.pikabu.ru/two.mp4">Видео 2</a>',
+    );
   });
 });

@@ -1,8 +1,13 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import * as iconv from "iconv-lite";
-import htmlToMd from "html-to-md";
-import { addSpacesToMarkdownLink, escapeMarkdownSpecialCharacters, removeSpecialCharacters, sleep } from "./utils";
+import { sleep } from "./utils";
+import {
+  absoluteUrl,
+  escapeAttribute,
+  escapeHtml,
+  htmlToTelegram,
+} from "./htmlToTelegram";
 import { updatePosts } from "../services/botServices";
 import { IPost, IPostInf } from "../types/types";
 import logger from "./logger";
@@ -12,13 +17,18 @@ import { FETCH_ATTEMPTS, FETCH_RETRY_DELAY_MS, POSTS_LIMIT } from "./constants";
 
 type CookieJar = Map<string, string>;
 
+function toCookieHeaders(setCookie: unknown): unknown[] {
+  if (Array.isArray(setCookie)) {
+    return setCookie;
+  }
+  if (typeof setCookie === "string") {
+    return [setCookie];
+  }
+  return [];
+}
+
 function storeCookies(jar: CookieJar, setCookie: unknown): void {
-  const headers = Array.isArray(setCookie)
-    ? setCookie
-    : typeof setCookie === "string"
-      ? [setCookie]
-      : [];
-  for (const header of headers) {
+  for (const header of toCookieHeaders(setCookie)) {
     const pair = String(header).split(";")[0];
     const eq = pair.indexOf("=");
     if (eq > 0) {
@@ -32,9 +42,7 @@ function cookieHeader(jar: CookieJar): Record<string, string> {
     return {};
   }
   return {
-    Cookie: [...jar]
-      .map(([name, value]) => `${name}=${value}`)
-      .join("; "),
+    Cookie: [...jar].map(([name, value]) => `${name}=${value}`).join("; "),
   };
 }
 
@@ -47,14 +55,22 @@ function isDdosGuardChallenge(html: string): boolean {
 
 export function getLinksVideos(html: string): string[] {
   const $ = cheerio.load(html);
-  const videoLinks: string[] = [];
-  $(".player").each((index, element) => {
+  const videoLinks = new Set<string>();
+  $("[data-role='player'] source[src], video source[src]").each(
+    (index, element) => {
+      const videoSource = $(element).attr("src");
+      if (videoSource) {
+        videoLinks.add(videoSource);
+      }
+    },
+  );
+  $(".player[data-source]").each((index, element) => {
     const videoSource = $(element).attr("data-source");
     if (videoSource) {
-      videoLinks.push(escapeMarkdownSpecialCharacters(videoSource));
+      videoLinks.add(videoSource);
     }
   });
-  return videoLinks;
+  return [...videoLinks];
 }
 
 export async function getPosts(html: string): Promise<IPostInf[]> {
@@ -80,7 +96,9 @@ export async function getPosts(html: string): Promise<IPostInf[]> {
       if (!postBlock) {
         continue;
       }
-      const postContent = cheerio.load(postBlock)(".story__content-inner").html();
+      const postContent = cheerio
+        .load(postBlock)(".story__content-inner")
+        .html();
       if (!postContent) {
         continue;
       }
@@ -95,45 +113,61 @@ export async function getPosts(html: string): Promise<IPostInf[]> {
 export function extractImages(html: string): string[] {
   const $ = cheerio.load(html);
   const imageSrcArray: string[] = [];
-  $(".story-image__image[data-src]").each((index, element) => {
-    const imageSrc = $(element).attr("data-src");
-    if (imageSrc) {
-      imageSrcArray.push(imageSrc);
-    }
-  });
+  const seen = new Set<string>();
+  $(".story-image__image[data-src], .carousel__item img[data-src]").each(
+    (index, element) => {
+      const imageSrc = $(element).attr("data-src");
+      if (imageSrc && !seen.has(imageSrc)) {
+        seen.add(imageSrc);
+        imageSrcArray.push(imageSrc);
+      }
+    },
+  );
   logger.info("Array of images for the post was obtained");
   return imageSrcArray;
 }
 
-export function deleteImages(html: string): string {
+export function addNamePost(postText: string, html: string): string {
   const $ = cheerio.load(html);
-  $(".story-image__image").remove();
-  return $.html();
-}
-
-export function addNamePost(markdownText: string, html: string): string {
-  const $ = cheerio.load(html);
-  const link = $(".story__title-link");
-  const title = removeSpecialCharacters(link.text());
-  const href = link.attr("href") ?? "";
-  const namePost = `[${title}](${href})`;
-  const finalText = `${namePost}\n\n${markdownText}`;
+  const title = $(".story__title-link")
+    .first()
+    .text()
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!title) {
+    return postText;
+  }
   logger.info("Title and text of the post have been merged");
-  return finalText;
+  return [`<b>${escapeHtml(title)}</b>`, postText].filter(Boolean).join("\n\n");
 }
 
-export function addVideoLinks(postText: string, linksVideos: string[]) {
-  const linksString = "\n" + linksVideos.join("\n");
-  return postText + "\n" + linksString;
+export function addVideoLinks(postText: string, linksVideos: string[]): string {
+  const links = linksVideos
+    .map((link) => absoluteUrl(link))
+    .filter((link) => link.length > 0);
+  if (links.length === 0) {
+    return postText;
+  }
+  const labeled = links.map((url, index) => {
+    const label = links.length === 1 ? "Видео" : `Видео ${index + 1}`;
+    return `<a href="${escapeAttribute(url)}">${label}</a>`;
+  });
+  return [postText, labeled.join("\n")].filter(Boolean).join("\n\n");
 }
 
-export function fixMarkdown(text: string): string {
-  const removeBold = text.replace(/\*\*(.*?)\*\*/g, "$1");
-  const escapeMardownList = removeBold.replace(/\*/g, "\\*");
-  const removeSlash = escapeMardownList.replace(/\\\]/g, "]");
-  const addSpaceLink = addSpacesToMarkdownLink(removeSlash);
-  logger.info("Mardown the post markup has been corrected");
-  return addSpaceLink;
+async function buildPosts(storiesHtml: string): Promise<IPost[]> {
+  const posts = await getPosts(storiesHtml);
+  const resultPosts: IPost[] = [];
+  for (const post of posts) {
+    const { postId, postContent, postBlock, linksVideos } = post;
+    const imagesArray = extractImages(postContent);
+    const telegramHtml = htmlToTelegram(postContent);
+    const textWithName = addNamePost(telegramHtml, postBlock);
+    const postText = addVideoLinks(textWithName, linksVideos);
+    resultPosts.push({ postId, postText, imagesArray });
+  }
+  logger.info("Final array of posts for distribution was obtained");
+  return resultPosts;
 }
 
 export async function getPostsFromWebsite(url: string): Promise<IPost[]> {
@@ -193,20 +227,7 @@ export async function getPostsFromWebsite(url: string): Promise<IPost[]> {
       );
     }
 
-    const posts = await getPosts(storyHtml.join(""));
-    const resultPosts: IPost[] = [];
-    for (const post of posts) {
-      const { postId, postContent, postBlock, linksVideos } = post;
-      const imagesArray = extractImages(postContent);
-      const htmlWithOutImages = deleteImages(postContent);
-      const markdownText = htmlToMd(htmlWithOutImages);
-      const rightMarkdown = fixMarkdown(markdownText);
-      const textWithName = addNamePost(rightMarkdown, postBlock);
-      const postText = addVideoLinks(textWithName, linksVideos);
-      resultPosts.push({ postId, postText, imagesArray });
-    }
-    logger.info("Final array of posts for distribution was obtained");
-    return resultPosts;
+    return await buildPosts(storyHtml.join(""));
   } catch (e) {
     const error = e as { status?: number; message?: string };
     logger.error(

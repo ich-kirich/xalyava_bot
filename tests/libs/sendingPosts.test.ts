@@ -24,6 +24,96 @@ describe("sendPost", () => {
     );
   });
 
+  test("should send the text with html markup", async () => {
+    const sendMessage = jest.fn();
+    const bot = {
+      sendMediaGroup: jest.fn(),
+      sendPhoto: jest.fn(),
+      sendMessage,
+    } as unknown as TelegramBot;
+    const postContent = {
+      postId: 1,
+      imagesArray: [],
+      postText: "<b>Title</b>",
+    };
+
+    await sendPost(bot, postContent, [1]);
+
+    expect(sendMessage).toHaveBeenCalledWith(1, "<b>Title</b>", {
+      disable_web_page_preview: true,
+      parse_mode: "HTML",
+    });
+  });
+
+  test("should keep the post text as it was parsed", async () => {
+    const sendMessage = jest.fn();
+    const bot = {
+      sendMediaGroup: jest.fn(),
+      sendPhoto: jest.fn(),
+      sendMessage,
+    } as unknown as TelegramBot;
+    const postText =
+      "<b>Crystal Crisis</b>\n\n" +
+      "Онлайн-файтинг про кристаллы.\n\n" +
+      "<b>Страница игры и раздачи в STEAM:</b>\n\n" +
+      "https://store.steampowered.com/app/447700/Crystal_Crisis/";
+
+    await sendPost(bot, { postId: 1, imagesArray: [], postText }, [1]);
+
+    expect(sendMessage).toHaveBeenCalledWith(1, postText, {
+      disable_web_page_preview: true,
+      parse_mode: "HTML",
+    });
+  });
+
+  test("should resend the text without markup if telegram rejects it", async () => {
+    const sendMessage = jest
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("Bad Request: can't parse entities: unexpected end of tag"),
+      )
+      .mockResolvedValueOnce({});
+    const bot = {
+      sendMediaGroup: jest.fn(),
+      sendPhoto: jest.fn(),
+      sendMessage,
+    } as unknown as TelegramBot;
+    const postContent = {
+      postId: 1,
+      imagesArray: [],
+      postText: '<b>Title</b> <a href="https://example.com">broken',
+    };
+
+    await sendPost(bot, postContent, [1]);
+
+    expect(sendMessage).toHaveBeenCalledTimes(2);
+    expect(sendMessage.mock.calls[1][1]).toBe("Title broken");
+    expect(sendMessage.mock.calls[1][2]).toEqual({
+      disable_web_page_preview: true,
+    });
+  });
+
+  test("should rethrow errors that are not caused by markup", async () => {
+    const sendMessage = jest
+      .fn()
+      .mockRejectedValue(new Error("Forbidden: bot was blocked by the user"));
+    const bot = {
+      sendMediaGroup: jest.fn(),
+      sendPhoto: jest.fn(),
+      sendMessage,
+    } as unknown as TelegramBot;
+    const postContent = {
+      postId: 1,
+      imagesArray: [],
+      postText: "<b>Title</b>",
+    };
+
+    await expect(sendPost(bot, postContent, [1])).rejects.toThrow(
+      "bot was blocked by the user",
+    );
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+  });
+
   test("should split more than 10 images into several albums", async () => {
     const sendMediaGroup = jest.fn();
     const bot = {

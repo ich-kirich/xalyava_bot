@@ -5,7 +5,8 @@ import { getUsersForMailing, updateTodayPost } from "../services/botServices";
 import { linkSite, MESSAGES } from "./constants";
 import logger from "./logger";
 import { getPostsFromWebsite } from "./parsingSite";
-import { splitTelegramText } from "./utils";
+import { htmlToPlainText } from "./htmlToTelegram";
+import { splitHtmlText } from "./utils";
 
 export async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
   for (const chatId of chatsIds) {
@@ -25,6 +26,35 @@ export async function sendSorryMessage(bot: TelegramBot, chatsIds: number[]) {
 }
 
 export const TELEGRAM_ALBUM_LIMIT = 10;
+
+function isParseError(e: { message?: string }): boolean {
+  return /can't parse entities|unsupported start tag|can't find end tag/i.test(
+    e?.message ?? "",
+  );
+}
+
+export async function sendFormattedText(
+  bot: TelegramBot,
+  chatId: number,
+  text: string,
+) {
+  try {
+    await bot.sendMessage(chatId, text, {
+      disable_web_page_preview: true,
+      parse_mode: "HTML",
+    });
+  } catch (e) {
+    if (!isParseError(e)) {
+      throw e;
+    }
+    logger.warn(
+      `Post markup was rejected by Telegram, sending it as plain text to the user with id: ${chatId}`,
+    );
+    await bot.sendMessage(chatId, htmlToPlainText(text), {
+      disable_web_page_preview: true,
+    });
+  }
+}
 
 export async function sendPost(
   bot: TelegramBot,
@@ -50,11 +80,8 @@ export async function sendPost(
           await bot.sendMediaGroup(chatId, album);
         }
       }
-      for (const chunk of splitTelegramText(postText)) {
-        await bot.sendMessage(chatId, chunk, {
-          disable_web_page_preview: true,
-          parse_mode: "Markdown",
-        });
+      for (const chunk of splitHtmlText(postText)) {
+        await sendFormattedText(bot, chatId, chunk);
       }
       logger.info(`Bot sent a post to the user with this id: ${chatId}`);
     } catch (e) {
