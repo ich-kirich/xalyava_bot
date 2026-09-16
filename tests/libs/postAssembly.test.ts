@@ -83,12 +83,12 @@ describe("getPostsFromWebsite assembly", () => {
         "https://store.steampowered.com/app/447700/Crystal_Crisis/\n\n" +
         "• Раздача продлится <b>до 22 Сентября</b>.\n" +
         "• <b>Даёт +1</b>.\n\n" +
+        '<a href="https://cs2.pikabu.ru/one_low.mp4">Видео</a>\n\n' +
         "<i><b>Crystal Crisis</b></i> – совершенная битва.\n\n" +
         "<b>ИГРОВЫЕ ОСОБЕННОСТИ</b>\n\n" +
         "• Quote и Curly Brace из <i>Cave Story</i>.\n\n" +
-        "И запомни: <b>НИКОГДА НЕ СДАВАЙСЯ!</b>\n\n" +
-        '<a href="https://cs2.pikabu.ru/one_low.mp4">Видео 1</a>\n' +
-        '<a href="https://cs17.pikabu.ru/two_low.mp4">Видео 2</a>',
+        '<a href="https://cs17.pikabu.ru/two_low.mp4">Видео</a>\n\n' +
+        "И запомни: <b>НИКОГДА НЕ СДАВАЙСЯ!</b>",
     );
   });
 });

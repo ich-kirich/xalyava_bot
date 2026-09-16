@@ -5,7 +5,7 @@ const SITE_ORIGIN = "https://pikabu.ru";
 
 /**
  * Blocks that cannot be shown inside a Telegram message: images go to the album,
- * videos go to the links at the end of the post, the rest is site interface.
+ * players are replaced by links beforehand, the rest is site interface.
  */
 const NOISE_SELECTORS = [
   "script",
@@ -26,6 +26,18 @@ const NOISE_SELECTORS = [
   ".carousel-bullets",
   ".player",
   ".story__read-more",
+].join(", ");
+
+/**
+ * A player is described in the markup in several ways: a block of the story, a
+ * container with data-role="player", a lazy player with the address in
+ * data-source and a plain video tag with sources.
+ */
+const VIDEO_SELECTORS = [
+  ".story-block_type_video",
+  "[data-role='player']",
+  ".player",
+  "video",
 ].join(", ");
 
 const NOISE_LINES = [/^показать полностью/i, /^перейти к видео$/i];
@@ -256,11 +268,43 @@ function normalizeText(text: string): string {
 }
 
 /**
+ * Telegram cannot play a pikabu video inside a message, so the player keeps its
+ * place in the post as a link on the word "Видео": the reader meets the videos
+ * in the same order as the author put them.
+ */
+function inlineVideoLinks($: ReturnType<typeof cheerio.load>): void {
+  $(VIDEO_SELECTORS)
+    .filter(
+      (index, element) => $(element).parents(VIDEO_SELECTORS).length === 0,
+    )
+    .each((index, element) => {
+      const player = $(element);
+      const url = [
+        player.attr("data-source"),
+        player.is("video") ? player.attr("src") : undefined,
+        player.find("source[src]").first().attr("src"),
+        player.find("[data-source]").first().attr("data-source"),
+        player.find('a[href*="/video/"]').first().attr("href"),
+      ]
+        .map((candidate) => absoluteUrl(candidate))
+        .find((candidate) => candidate.length > 0);
+      if (!url) {
+        player.remove();
+        return;
+      }
+      player.replaceWith(
+        `<div><a href="${escapeAttribute(url)}">Видео</a></div>`,
+      );
+    });
+}
+
+/**
  * Converts the story markup into Telegram HTML: only the tags that Telegram
  * understands are kept, everything else becomes line breaks and bullets.
  */
 export function htmlToTelegram(html: string): string {
   const $ = cheerio.load(html);
+  inlineVideoLinks($);
   $(NOISE_SELECTORS).remove();
   const nodes = $("body").contents().toArray() as unknown as HtmlNode[];
   const text = normalizeText(renderNodes(nodes));

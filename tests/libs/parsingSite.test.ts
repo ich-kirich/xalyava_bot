@@ -114,7 +114,7 @@ describe("addNamePost", () => {
 });
 
 describe("addVideoLinks", () => {
-  test("appends numbered video labels instead of raw urls", () => {
+  test("appends the videos that are missing in the text", () => {
     expect(
       addVideoLinks("Текст", [
         "https://cs2.pikabu.ru/one.mp4",
@@ -122,8 +122,20 @@ describe("addVideoLinks", () => {
       ]),
     ).toBe(
       "Текст\n\n" +
-        '<a href="https://cs2.pikabu.ru/one.mp4">Видео 1</a>\n' +
-        '<a href="https://cs17.pikabu.ru/two.mp4">Видео 2</a>',
+        '<a href="https://cs2.pikabu.ru/one.mp4">Видео</a>\n' +
+        '<a href="https://cs17.pikabu.ru/two.mp4">Видео</a>',
     );
+  });
+
+  test("does not duplicate a video that already has a link in the text", () => {
+    const postText =
+      'Текст\n\n<a href="https://cs2.pikabu.ru/one.mp4">Видео</a>\n\nКонец';
+
+    expect(
+      addVideoLinks(postText, [
+        "https://cs2.pikabu.ru/one.mp4",
+        "https://cs17.pikabu.ru/two.mp4",
+      ]),
+    ).toBe(`${postText}\n\n<a href="https://cs17.pikabu.ru/two.mp4">Видео</a>`);
   });
 });

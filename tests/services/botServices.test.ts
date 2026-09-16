@@ -33,9 +33,8 @@ jest.mock("../../src/models/user", () => ({
 jest.mock("../../src/models/todayPost", () => ({
   __esModule: true,
   default: {
-    findOne: jest.fn(),
     findAll: jest.fn(),
-    update: jest.fn(),
+    destroy: jest.fn(),
     create: jest.fn(),
   },
 }));
@@ -110,29 +109,38 @@ describe("botServices", () => {
     ]);
   });
 
-  test("updateTodayPost creates when missing and updates every row when present", async () => {
+  test("updateTodayPost deletes the previous posts before storing a new one", async () => {
     const post = {
       postId: 9,
       postText: "text",
       imagesArray: ["a.jpg"],
     };
-    (TodayPost.findOne as jest.Mock).mockResolvedValueOnce(null);
+    const order: string[] = [];
+    (TodayPost.destroy as jest.Mock).mockImplementation(async () => {
+      order.push("destroy");
+    });
+    (TodayPost.create as jest.Mock).mockImplementation(async () => {
+      order.push("create");
+    });
+
     await updateTodayPost(post);
+
+    expect(TodayPost.destroy).toHaveBeenCalledWith({ where: {} });
     expect(TodayPost.create).toHaveBeenCalledWith({
       imagesArray: post.imagesArray,
       postText: post.postText,
       postId: post.postId,
     });
-
-    (TodayPost.findOne as jest.Mock).mockResolvedValueOnce({ postId: 9 });
-    await updateTodayPost(post);
-    expect(TodayPost.update).toHaveBeenCalledWith(post, { where: {} });
+    expect(order).toEqual(["destroy", "create"]);
   });
 
-  test("getTodayPost returns every stored today post", async () => {
+  test("getTodayPost returns the stored posts newest first", async () => {
     const rows = [{ dataValues: { postId: 1 } }];
     (TodayPost.findAll as jest.Mock).mockResolvedValue(rows);
 
     await expect(getTodayPost()).resolves.toBe(rows);
+    expect(TodayPost.findAll).toHaveBeenCalledWith({
+      order: [["createdAt", "DESC"]],
+    });
   });
 });

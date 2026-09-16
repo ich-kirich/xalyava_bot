@@ -89,21 +89,19 @@ export async function getUsersForMailing(): Promise<number[]> {
   }
 }
 
+/**
+ * The table keeps a single post: the one that a user gets right after
+ * subscribing. The previous rows are deleted, otherwise the table grows with
+ * every mailing and a subscriber can receive an old post in an outdated format.
+ */
 export async function updateTodayPost(newPost: IPost) {
   try {
     const { postId, imagesArray, postText } = newPost;
-    const existingPost = await TodayPost.findOne({
-      where: { postId },
-    });
-    if (existingPost) {
-      await TodayPost.update(newPost, { where: {} });
-      logger.info("Today's post has been updated");
-    } else {
-      await TodayPost.create({ imagesArray, postText, postId });
-      logger.info(
-        `Today's post has been updated to a post with this id: ${postId}`,
-      );
-    }
+    await TodayPost.destroy({ where: {} });
+    await TodayPost.create({ imagesArray, postText, postId });
+    logger.info(
+      `Today's post has been updated to a post with this id: ${postId}`,
+    );
   } catch (e) {
     logger.error(
       "Error when updating today post",
@@ -115,7 +113,9 @@ export async function updateTodayPost(newPost: IPost) {
 
 export async function getTodayPost() {
   try {
-    const allPosts = await TodayPost.findAll();
+    const allPosts = await TodayPost.findAll({
+      order: [["createdAt", "DESC"]],
+    });
     logger.info("Today's post was received");
     return allPosts;
   } catch (e) {

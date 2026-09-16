@@ -141,17 +141,22 @@ export function addNamePost(postText: string, html: string): string {
   return [`<b>${escapeHtml(title)}</b>`, postText].filter(Boolean).join("\n\n");
 }
 
+/**
+ * The players are already turned into links inside the text, so here only the
+ * videos that did not survive the markup conversion are added, otherwise the
+ * post would end with duplicates of the links from the body.
+ */
 export function addVideoLinks(postText: string, linksVideos: string[]): string {
   const links = linksVideos
     .map((link) => absoluteUrl(link))
-    .filter((link) => link.length > 0);
+    .filter((link) => link.length > 0)
+    .filter((link) => !postText.includes(escapeAttribute(link)));
   if (links.length === 0) {
     return postText;
   }
-  const labeled = links.map((url, index) => {
-    const label = links.length === 1 ? "Видео" : `Видео ${index + 1}`;
-    return `<a href="${escapeAttribute(url)}">${label}</a>`;
-  });
+  const labeled = links.map(
+    (url) => `<a href="${escapeAttribute(url)}">Видео</a>`,
+  );
   return [postText, labeled.join("\n")].filter(Boolean).join("\n\n");
 }
 

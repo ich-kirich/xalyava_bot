@@ -73,14 +73,10 @@ describe("htmlToTelegram", () => {
     ).toBe("<blockquote>Играйте до 22 сентября</blockquote>");
   });
 
-  test("drops images, videos, carousels and site interface", () => {
+  test("drops images, carousels and site interface", () => {
     const html = `
       <div class="story-block story-block_type_image">
         <figure class="story-image"><img class="story-image__image" data-src="https://cs.pikabu.ru/pic.webp"></figure>
-      </div>
-      <div class="story-block story-block_type_video">
-        <div data-role="player" data-type="video-file">Видео ● 00:28</div>
-        <a href="https://pikabu.ru/video/story/test_1/1" hidden>Перейти к видео</a>
       </div>
       <div class="story-block story-block_type_carousel">
         <section class="carousel"><article class="carousel__item"><img data-src="https://cs.pikabu.ru/slide.jpg"></article></section>
@@ -91,6 +87,40 @@ describe("htmlToTelegram", () => {
     `;
 
     expect(htmlToTelegram(html)).toBe("Текст поста");
+  });
+
+  test("keeps every player in its place in the text as a video link", () => {
+    const html = `
+      <div class="story-block story-block_type_text"><p>Первый абзац</p></div>
+      <div class="story-block story-block_type_video">
+        <div data-role="player"><video><source src="https://cs2.pikabu.ru/one_low.mp4" type="video/mp4"></video></div>
+        <a href="https://pikabu.ru/video/story/test_1/1" hidden>Перейти к видео</a>
+      </div>
+      <div class="story-block story-block_type_text"><p>Второй абзац</p></div>
+      <div class="story-block story-block_type_video">
+        <div class="player" data-source="https://cdn.example.com/legacy.mp4"></div>
+      </div>
+    `;
+
+    expect(htmlToTelegram(html)).toBe(
+      "Первый абзац\n\n" +
+        '<a href="https://cs2.pikabu.ru/one_low.mp4">Видео</a>\n\n' +
+        "Второй абзац\n\n" +
+        '<a href="https://cdn.example.com/legacy.mp4">Видео</a>',
+    );
+  });
+
+  test("falls back to the video page when the player has no file", () => {
+    const html = `
+      <div class="story-block story-block_type_video">
+        <div data-role="player" data-type="video-file">Видео ● 00:28</div>
+        <a href="https://pikabu.ru/video/story/test_1/1" hidden>Перейти к видео</a>
+      </div>
+    `;
+
+    expect(htmlToTelegram(html)).toBe(
+      '<a href="https://pikabu.ru/video/story/test_1/1">Видео</a>',
+    );
   });
 
   test("escapes characters that telegram would read as markup", () => {
